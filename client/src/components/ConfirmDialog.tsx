@@ -8,6 +8,8 @@ export function ConfirmDialog({
   children,
   confirmLabel,
   confirmIcon,
+  confirmVariant = 'danger',
+  cancelLabel = 'Cancel',
   busy = false,
   canConfirm = true,
   onConfirm,
@@ -17,8 +19,11 @@ export function ConfirmDialog({
   title: string
   children: ReactNode
   confirmLabel: string
-  /** Icon on the (outline) confirm button, so it doesn't rely on its blue border alone. */
+  /** Icon on the confirm button, so a destructive one doesn't rely on its blue border alone. */
   confirmIcon?: ReactNode
+  /** 'danger' (outline) for destructive actions, 'primary' (gold) for ordinary ones. */
+  confirmVariant?: 'danger' | 'primary'
+  cancelLabel?: string
   busy?: boolean
   /** false hides the confirm button (e.g. after the action was refused). */
   canConfirm?: boolean
@@ -61,11 +66,11 @@ export function ConfirmDialog({
           </h2>
           <div className="mt-2 space-y-3 text-sm text-text">{children}</div>
           <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-            <Button onClick={onClose} disabled={busy} autoFocus>
-              Cancel
+            <Button onClick={onClose} disabled={busy} autoFocus className="cursor-pointer">
+              {cancelLabel}
             </Button>
             {canConfirm && (
-              <Button variant="danger" onClick={onConfirm} disabled={busy}>
+              <Button variant={confirmVariant} onClick={onConfirm} disabled={busy} className="cursor-pointer">
                 {confirmIcon}
                 {busy ? 'Working…' : confirmLabel}
               </Button>

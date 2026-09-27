@@ -2,7 +2,7 @@
 @import './theme/tokens.css';
 
 @theme {
-  --font-sans: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --font-sans: 'Poppins', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   /* Tailwind's shadows are pure black; on this dark palette surfaces are separated by borders instead. */
   --shadow-*: initial;
 }

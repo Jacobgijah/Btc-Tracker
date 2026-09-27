@@ -1,9 +1,9 @@
 import type { ReactNode } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Check, LogOut } from 'lucide-react'
-import { Button, Card, ErrorState, PageHeader, SegmentedControl, Skeleton } from '../../components/ui'
+import { Card, ErrorState, PageHeader, SegmentedControl, Skeleton } from '../../components/ui'
 import { useToast } from '../../components/Toast'
-import { useAuth } from '../auth/AuthContext'
+import { LogoutButton } from '../auth/LogoutButton'
 import { api, errorMessage } from '../../lib/api'
 import { queryKeys, useSettings, useUpdateSettings } from '../../lib/queries'
 import { cx } from '../../lib/cx'
@@ -27,7 +27,6 @@ export function SettingsPage() {
   const me = useQuery({ queryKey: queryKeys.me, queryFn: api.me, staleTime: Infinity })
   const update = useUpdateSettings()
   const toast = useToast()
-  const { logout } = useAuth()
 
   const save = (patch: Partial<Settings>, label: string) =>
     update.mutate(patch, {
@@ -109,9 +108,9 @@ export function SettingsPage() {
         <div className="font-medium break-all">
           {me.isPending ? <Skeleton className="h-5 w-48" /> : me.isError ? errorMessage(me.error) : me.data.email}
         </div>
-        <Button onClick={logout} className="mt-4 w-full sm:w-auto">
+        <LogoutButton variant="secondary" className="mt-4 w-full sm:w-auto">
           <LogOut className="size-4" aria-hidden /> Log out
-        </Button>
+        </LogoutButton>
       </Card>
     </div>
   )

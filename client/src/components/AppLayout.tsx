@@ -1,6 +1,6 @@
 import { NavLink, Outlet } from 'react-router'
 import { Bitcoin, ChartLine, LayoutDashboard, List, LogOut, Plus, Settings } from 'lucide-react'
-import { useAuth } from '../features/auth/AuthContext'
+import { LogoutButton } from '../features/auth/LogoutButton'
 import { CurrencyToggle } from './CurrencyToggle'
 import { LinkButton } from './ui'
 import { cx } from '../lib/cx'
@@ -13,8 +13,6 @@ const NAV = [
 ]
 
 export function AppLayout() {
-  const { logout } = useAuth()
-
   return (
     <div className="min-h-dvh">
       <a
@@ -62,15 +60,12 @@ export function AppLayout() {
                 Add
               </LinkButton>
             </div>
-            <button
-              type="button"
-              onClick={logout}
+            <LogoutButton
+              label="Log out"
               className="grid size-11 place-items-center rounded-xl text-text-muted hover:bg-hover hover:text-text"
-              aria-label="Log out"
-              title="Log out"
             >
               <LogOut className="size-5" aria-hidden />
-            </button>
+            </LogoutButton>
           </div>
         </div>
       </header>

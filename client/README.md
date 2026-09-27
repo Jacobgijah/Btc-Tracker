@@ -83,6 +83,8 @@ icons, borders, underlines, chart marks and focus/badge outlines, and as text on
   cool-gray.
 - **Errors** are a blue border/ring + ⊗ icon + white text; **warnings** a gold border + ⚠ icon.
 - **Links** are white text with a blue underline.
+- **Font**: Poppins (400/500/600/700), self-hosted from `@fontsource/poppins` (imported in `main.tsx`,
+  set as `--font-sans` in `index.css`), so no request goes to Google.
 - `npm run lint:colors` (also run by `npm test`) fails on colour literals or `rgb()`/`hsl()` outside the token
   files, default Tailwind palette classes, raw token or `white`/`black` classes where an alias exists, and
   `dark:` variants.
