@@ -26,8 +26,9 @@ npm run test:watch
 
 Integration tests use a separate database (`btc_tracker_test`) configured in `server/.env.test`;
 put machine-specific overrides (e.g. another port) in `server/.env.test.local`. Before each run
-the test database is reset with `prisma migrate reset`. The runner refuses to start unless the
-database name ends in `_test`, so it cannot touch the dev database.
+pending migrations are applied with `prisma migrate deploy`, and every test truncates the tables
+first. The runner refuses to start unless the database name ends in `_test`, so it cannot touch
+the dev database.
 
 ## Money rules
 

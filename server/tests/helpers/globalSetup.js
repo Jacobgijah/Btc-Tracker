@@ -9,11 +9,13 @@ export default function setup() {
   const testEnv = loadTestEnv();
   const dbName = assertTestDatabase(testEnv.DATABASE_URL);
 
+  // Applies pending migrations without dropping anything (creates the database
+  // if needed). Tests truncate their tables in beforeEach, so no reset is needed.
   // Test values win over anything in the shell or .env.
-  execSync('npx prisma migrate reset --force --skip-seed --skip-generate', {
+  execSync('npx prisma migrate deploy', {
     cwd: serverDir,
     env: { ...process.env, ...testEnv },
     stdio: 'pipe',
   });
-  console.log(`[globalSetup] reset and migrated test database "${dbName}"`);
+  console.log(`[globalSetup] migrations applied to test database "${dbName}"`);
 }
