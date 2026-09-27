@@ -1,0 +1,22 @@
+services:
+  db:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: btc
+      POSTGRES_PASSWORD: btc_dev_password
+      POSTGRES_DB: btc_tracker
+    ports:
+      # Override the host port with POSTGRES_PORT in a root .env if 5432 is taken
+      # (and update DATABASE_URL in server/.env to match).
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U btc -d btc_tracker"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  pgdata:

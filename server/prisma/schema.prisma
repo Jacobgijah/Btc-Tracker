@@ -1,0 +1,61 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum TransactionType {
+  BUY
+  SELL
+  TRANSFER_IN
+}
+
+enum Currency {
+  TZS
+  USD
+}
+
+model User {
+  id           Int      @id @default(autoincrement())
+  email        String   @unique
+  passwordHash String
+  createdAt    DateTime @default(now())
+}
+
+model Transaction {
+  id           Int             @id @default(autoincrement())
+  type         TransactionType
+  date         DateTime
+  /// Always positive; direction is given by `type`.
+  sats         BigInt
+  /// Fiat amount excluding fee.
+  fiatAmount   Decimal         @db.Decimal(20, 2)
+  fiatCurrency Currency
+  /// Fee in fiatCurrency.
+  feeAmount    Decimal         @default(0) @db.Decimal(20, 2)
+  /// 1 USD = X TZS on the trade date.
+  usdTzsRate   Decimal         @db.Decimal(14, 4)
+  exchange     String?
+  note         String?
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+
+  @@index([date])
+}
+
+model PriceSnapshot {
+  id        Int      @id @default(autoincrement())
+  timestamp DateTime @default(now())
+  btcUsd    Decimal  @db.Decimal(20, 2)
+  usdTzs    Decimal  @db.Decimal(14, 4)
+
+  @@index([timestamp])
+}
+
+model Setting {
+  key   String @id
+  value String
+}
