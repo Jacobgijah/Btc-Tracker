@@ -25,10 +25,13 @@ const sell = (overrides = {}) => ({
   ...overrides,
 });
 
+/** Creates a transaction; returns it as stored (usdTzsRateSource is only on the POST response). */
 async function create(body) {
   const res = await api.post('/transactions', body);
   expect(res.status, JSON.stringify(res.body)).toBe(201);
-  return res.body;
+  const { usdTzsRateSource, ...stored } = res.body;
+  expect(usdTzsRateSource).toBe('provided');
+  return stored;
 }
 
 describe('CRUD', () => {
@@ -163,7 +166,6 @@ describe('validation (400)', () => {
     ['negative fee', buy({ feeAmount: '-1' }), 'feeAmount'],
     ['unknown currency', buy({ fiatCurrency: 'EUR' }), 'fiatCurrency'],
     ['unknown type', buy({ type: 'GIFT' }), 'type'],
-    ['missing usdTzsRate', buy({ usdTzsRate: undefined }), 'usdTzsRate'],
     ['zero usdTzsRate', buy({ usdTzsRate: '0' }), 'usdTzsRate'],
     ['usdTzsRate with 5 dp', buy({ usdTzsRate: '2500.00001' }), 'usdTzsRate'],
     ['future date', buy({ date: '2999-01-01T00:00:00Z' }), 'date'],

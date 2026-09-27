@@ -13,7 +13,7 @@ cp .env.example .env                 # fill in JWT_SECRET, ADMIN_EMAIL, ADMIN_PA
 npm install
 npx prisma migrate dev               # create tables
 npm run db:seed                      # create your user + default settings
-npm run dev                          # http://localhost:4000
+npm run dev                          # http://localhost:4000 (also starts the price job)
 ```
 
 ## Tests
@@ -41,6 +41,87 @@ the dev database.
 - Cost methods: `AVERAGE` (weighted average cost) or `FIFO` (oldest lots sold first).
 - Transactions are processed by `date` ASC, then `id` ASC.
 
+## Prices
+
+A background job fetches two rates and saves them together as one `PriceSnapshot`:
+`btcUsd` (BTC price in USD) and `usdTzs` (TZS per 1 USD). BTC/TZS is always derived as
+`btcUsd × usdTzs`, never fetched. The job runs once at startup and then on `PRICE_REFRESH_CRON`
+(every 15 minutes by default). A run is skipped if the previous one is still going, and failures
+are logged, never crash the server.
+
+Providers, tried in order until one answers:
+
+| Rate | Provider | Endpoint |
+| --- | --- | --- |
+| BTC/USD | CoinGecko | `https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd` (optional `COINGECKO_API_KEY` sent as `x-cg-demo-api-key`) |
+| BTC/USD | Coinbase | `https://api.coinbase.com/v2/prices/BTC-USD/spot` |
+| BTC/USD | Kraken | `https://api.kraken.com/0/public/Ticker?pair=XBTUSD` (last trade price) |
+| USD/TZS | open.er-api | `https://open.er-api.com/v6/latest/USD` |
+| USD/TZS | currency-api (fawazahmed0, via jsDelivr) | `https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json` |
+| USD/TZS on a date | currency-api | `…/currency-api@YYYY-MM-DD/v1/currencies/usd.json` (from March 2024) |
+
+- Every request has a 10 s timeout, is retried twice with backoff (5xx, 429, timeouts and network
+  errors only), sends a descriptive User-Agent, and has its response validated with zod.
+- USD/TZS is cached in memory for `FX_CACHE_HOURS`. If every FX provider fails, the previous
+  snapshot's `usdTzs` is reused (logged as a warning). If every BTC provider fails, nothing is saved.
+- Sanity check: a value that moved more than 50% from the previous snapshot is rejected, logged
+  as an error, and nothing is saved.
+- Stored values are rounded ROUND_HALF_UP to the column precision: `btcUsd` 2 dp, `usdTzs` 4 dp.
+
+### Price environment variables
+
+| Variable | Default | Meaning |
+| --- | --- | --- |
+| `COINGECKO_API_KEY` | (none) | Optional CoinGecko demo API key |
+| `PRICE_REFRESH_CRON` | `*/15 * * * *` | Refresh schedule (node-cron syntax) |
+| `FX_CACHE_HOURS` | `6` | How long to reuse a fetched USD/TZS rate |
+| `PRICE_STALE_MINUTES` | `60` | Prices older than this are flagged `stale: true` |
+| `ENABLE_PRICE_JOB` | `true` (`false` when `NODE_ENV=test`) | Run the scheduled job. Must be `false` in tests. |
+
+### Example: latest price and refresh
+
+```http
+GET /prices/latest
+```
+
+```json
+{ "btcUsd": "84719.00", "usdTzs": "2656.3489", "btcTzs": "225043222.46", "timestamp": "2026-09-27T19:06:13.829Z", "stale": false }
+```
+
+`POST /prices/refresh` returns the same fields plus `id` and
+`"sources": { "btcUsd": "coingecko", "usdTzs": "open.er-api (cached)" }`.
+
+### Example: history
+
+`GET /prices/history?from=2026-09-01&to=2026-09-02&interval=hourly` returns the last snapshot in
+each UTC hour (or day for `daily`; every snapshot for `raw`), oldest first:
+
+```json
+{
+  "interval": "hourly",
+  "from": "2026-09-01T00:00:00.000Z",
+  "to": "2026-09-02T23:59:59.999Z",
+  "count": 2,
+  "truncated": false,
+  "points": [
+    { "bucket": "2026-09-01T10:00:00.000Z", "btcUsd": "80100.00", "usdTzs": "2600.0000", "btcTzs": "208260000.00", "timestamp": "2026-09-01T10:40:00.000Z" },
+    { "bucket": "2026-09-01T11:00:00.000Z", "btcUsd": "80300.00", "usdTzs": "2602.0000", "btcTzs": "208940600.00", "timestamp": "2026-09-01T11:50:00.000Z" }
+  ]
+}
+```
+
+At most 1000 points are returned (the most recent ones); `truncated` says whether more existed.
+
+### Example: FX for a date
+
+```http
+GET /prices/fx?date=2026-01-10
+```
+
+```json
+{ "date": "2026-01-10", "usdTzs": "2498.6251", "source": "historical_lookup", "asOf": "2026-01-10" }
+```
+
 ## API
 
 All routes except `/health` and `/auth/login` need `Authorization: Bearer <token>`.
@@ -57,6 +138,10 @@ All routes except `/health` and `/auth/login` need `Authorization: Bearer <token
 | DELETE | `/transactions/:id` | Delete (204) |
 | GET | `/portfolio/summary` | Holdings, cost basis and P/L in USD and TZS |
 | GET | `/portfolio/ledger` | Every transaction, oldest first, with running totals after it |
+| GET | `/prices/latest` | Latest price snapshot with a `stale` flag (404 before the first one) |
+| POST | `/prices/refresh` | Fetch prices now and save a snapshot (1 request / minute) |
+| GET | `/prices/history` | Query: `from`, `to`, `interval` = `raw` \| `hourly` \| `daily`. Max 1000 points. |
+| GET | `/prices/fx` | Query: `date=YYYY-MM-DD`. USD/TZS for that day, to pre-fill `usdTzsRate`. |
 | GET | `/settings` | `{ displayCurrency, costMethod }` |
 | PATCH | `/settings` | `displayCurrency`: `TZS`\|`USD`, `costMethod`: `AVERAGE`\|`FIFO` |
 
@@ -69,7 +154,7 @@ All routes except `/health` and `/auth/login` need `Authorization: Bearer <token
 | `fiatAmount` | Excluding fee. > 0 for BUY/SELL, ≥ 0 for TRANSFER_IN (its market value; 0 = zero cost basis). ≤ 2 dp. |
 | `feeAmount` | ≥ 0, default 0, ≤ 2 dp, in `fiatCurrency`. For a SELL it must be less than `fiatAmount`. |
 | `fiatCurrency` | `TZS` or `USD` |
-| `usdTzsRate` | TZS per 1 USD on the trade date. > 0, ≤ 4 dp. |
+| `usdTzsRate` | TZS per 1 USD on the trade date. > 0, ≤ 4 dp. **Optional on create** (see below). |
 | `date` | ISO datetime (`2026-01-10T14:30:00Z`) or date (`2026-01-10`, = 00:00 UTC). Not in the future. |
 | `exchange`, `note` | Optional, ≤ 100 / ≤ 500 chars. `null` clears them on PATCH. |
 
@@ -81,8 +166,11 @@ All routes except `/health` and `/auth/login` need `Authorization: Bearer <token
 | --- | --- | --- |
 | 400 | Validation failed | `{ error, fieldErrors: { field: [msg] }, formErrors }` |
 | 401 | Missing / invalid token | `{ error }` |
-| 404 | Unknown id or route | `{ error }` |
+| 404 | Unknown id or route; no price snapshot yet; no FX rate for a date | `{ error }` |
 | 422 | The change would make a sell exceed holdings at its point in time | `{ error, details: { transactionId, date, attemptedSats, availableSats } }` |
+| 422 | `usdTzsRate` omitted and no rate could be found for the date | `{ error, details: { field: "usdTzsRate", date } }` |
+| 429 | Too many login attempts / price refreshes | `{ error }` |
+| 502 | `POST /prices/refresh`: every provider failed, or a value failed the sanity check | `{ error, details }` |
 
 Every create, update and delete replays the whole ledger with the change applied **before**
 writing, so deleting an old buy or backdating a sell can't leave you with negative holdings.
@@ -122,9 +210,25 @@ Content-Type: application/json
   "exchange": "Binance",
   "note": null,
   "createdAt": "2026-09-27T18:40:00.000Z",
-  "updatedAt": "2026-09-27T18:40:00.000Z"
+  "updatedAt": "2026-09-27T18:40:00.000Z",
+  "usdTzsRateSource": "provided"
 }
 ```
+
+### Automatic `usdTzsRate`
+
+`usdTzsRate` can be left out of `POST /transactions`. The server fills it in before saving and
+returns where it came from in `usdTzsRateSource` (on the POST response only; it isn't stored):
+
+| `usdTzsRateSource` | When |
+| --- | --- |
+| `provided` | You sent `usdTzsRate`. Your rate always wins. |
+| `latest_snapshot` | Transaction dated within the last 24h, and a price snapshot from the last 24h exists. |
+| `historical_lookup` | Otherwise: the published daily rate for that UTC day from currency-api (cached in memory). If that day isn't published, up to 3 earlier days are tried. |
+
+If no rate is found (e.g. dates before March 2024, which the historical source doesn't cover),
+the request fails with **422** and you need to enter `usdTzsRate` yourself. `GET /prices/fx?date=`
+runs the same lookup, so a form can pre-fill the field.
 
 ### Example: portfolio summary
 
@@ -142,7 +246,7 @@ Authorization: Bearer eyJhbGciOi...
   "costMethod": "AVERAGE",
   "transactionCount": 3,
   "holdings": { "sats": "1200000", "btc": "0.01200000" },
-  "price": { "btcUsd": "110000.00", "usdTzs": "2700.0000", "btcTzs": "297000000.00", "timestamp": "2026-04-02T00:00:00.000Z" },
+  "price": { "btcUsd": "110000.00", "usdTzs": "2700.0000", "btcTzs": "297000000.00", "timestamp": "2026-04-02T00:00:00.000Z", "stale": true },
   "USD": {
     "invested": "1616.00",
     "costBasis": "1292.80",
@@ -171,6 +275,7 @@ Authorization: Bearer eyJhbGciOi...
 - `avgCostPerBtc` is `null` when holdings are 0.
 - `unrealizedPnlPct` is `null` when `costBasis` is 0.
 - Until a price snapshot exists, `price`, `currentValue`, `unrealizedPnl`, `unrealizedPnlPct` and `totalPnl` are `null`.
+- `price.stale` is `true` when the latest snapshot is older than `PRICE_STALE_MINUTES`.
 
 With `costMethod: "FIFO"` the same trades give realized 109,050 TZS / 24.00 USD and unrealized
 220,900 TZS / 7.00 USD. The total P/L is the same under both methods.

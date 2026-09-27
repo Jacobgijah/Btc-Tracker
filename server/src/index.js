@@ -1,9 +1,13 @@
 import { config } from './config.js';
 import { app } from './app.js';
 import { prisma } from './lib/prisma.js';
+import { startPriceJob } from './jobs/price.job.js';
+
+let priceJob = null;
 
 const server = app.listen(config.PORT, () => {
   console.log(`API listening on http://localhost:${config.PORT}`);
+  priceJob = startPriceJob();
 });
 
 let shuttingDown = false;
@@ -17,6 +21,7 @@ async function shutdown(signal) {
   const timer = setTimeout(() => process.exit(1), 10_000);
   timer.unref();
 
+  await priceJob?.stop();
   server.close(async (err) => {
     await prisma.$disconnect();
     process.exit(err ? 1 : 0);

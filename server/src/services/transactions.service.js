@@ -2,6 +2,8 @@ import { prisma } from '../lib/prisma.js';
 import { serializeTransaction } from '../lib/serialize.js';
 import { assertSufficientHoldings } from './portfolio.engine.js';
 import { mergedRecordSchema } from '../schemas/transaction.schema.js';
+import { resolveUsdTzsForDate } from './prices/fxRate.service.js';
+import { HttpError } from '../lib/errors.js';
 
 // Serializes all ledger-changing writes so two concurrent requests can't each
 // pass the over-sell check against a ledger the other is about to change.
@@ -43,12 +45,35 @@ export async function getTransaction(id) {
   return serializeTransaction(await prisma.transaction.findUniqueOrThrow({ where: { id } }));
 }
 
-export async function createTransaction(data) {
+/**
+ * A rate given by the user always wins; otherwise look one up for the date.
+ * Returns { usdTzsRate, usdTzsRateSource }.
+ */
+async function resolveRate(data) {
+  if (data.usdTzsRate !== undefined) {
+    return { usdTzsRate: data.usdTzsRate, usdTzsRateSource: 'provided' };
+  }
+  const found = await resolveUsdTzsForDate(data.date);
+  if (!found) {
+    const day = data.date.toISOString().slice(0, 10);
+    throw new HttpError(
+      422,
+      `Couldn't find a USD/TZS rate for ${day}. Please enter usdTzsRate manually.`,
+      { field: 'usdTzsRate', date: day },
+    );
+  }
+  return { usdTzsRate: found.rate.toFixed(4), usdTzsRateSource: found.source };
+}
+
+export async function createTransaction(input) {
+  // Network lookups happen before the DB transaction (and its lock) starts.
+  const { usdTzsRate, usdTzsRateSource } = await resolveRate(input);
+  const data = { ...input, usdTzsRate };
   const created = await withLedgerCheck(
     (tx, current) => [...current, { ...data, id: null }],
     (tx) => tx.transaction.create({ data }),
   );
-  return serializeTransaction(created);
+  return { ...serializeTransaction(created), usdTzsRateSource };
 }
 
 export async function updateTransaction(id, patch) {

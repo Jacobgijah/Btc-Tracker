@@ -1,9 +1,7 @@
 import { z } from 'zod';
 import { TRANSACTION_TYPES, CURRENCIES } from '../constants.js';
 import { D, MAX_SATS, btcToSats } from '../lib/money.js';
-
-// Allow a little client/server clock skew before calling a date "in the future".
-const FUTURE_TOLERANCE_MS = 5 * 60 * 1000;
+import { isoDate, endOfDayBound, pastIsoDate } from './common.js';
 
 /**
  * Non-negative decimal given as a string or number, with at most `dp`
@@ -81,31 +79,6 @@ const btcField = z
     return sats;
   });
 
-const DAY_MS = 24 * 60 * 60 * 1000;
-const isDateOnly = (v) => z.string().date().safeParse(v).success;
-const isDateTime = (v) => z.string().datetime({ offset: true }).safeParse(v).success;
-
-const isoString = z
-  .string()
-  .trim()
-  .refine(
-    (v) => isDateOnly(v) || isDateTime(v),
-    'must be an ISO date (YYYY-MM-DD) or datetime (e.g. 2026-01-10T14:30:00Z)',
-  );
-
-/** ISO datetime with offset, or a plain YYYY-MM-DD (taken as 00:00 UTC). */
-export const isoDate = isoString.transform((v) => new Date(v));
-
-/** Upper bound for filters: a plain date means "through the end of that day" (UTC). */
-const endOfDayBound = isoString.transform((v) =>
-  isDateOnly(v) ? new Date(new Date(v).getTime() + DAY_MS - 1) : new Date(v),
-);
-
-const notInFuture = isoDate.refine(
-  (d) => d.getTime() <= Date.now() + FUTURE_TOLERANCE_MS,
-  'date cannot be in the future',
-);
-
 const optionalText = (max) =>
   z
     .string()
@@ -123,7 +96,7 @@ const fields = {
   feeAmount: decimalField({ dp: 2, intDigits: 18, label: 'feeAmount' }),
   fiatCurrency: z.enum(CURRENCIES),
   usdTzsRate: decimalField({ dp: 4, intDigits: 10, label: 'usdTzsRate', positive: true }),
-  date: notInFuture,
+  date: pastIsoDate,
   exchange: optionalText(100),
   note: optionalText(500),
 };
@@ -173,7 +146,8 @@ function toRecord({ btc, ...rest }) {
 
 export const createTransactionSchema = z
   .object({ ...fields, feeAmount: fields.feeAmount.default('0') })
-  .partial({ sats: true, btc: true, exchange: true, note: true })
+  // usdTzsRate may be omitted: the service fills it in before saving.
+  .partial({ sats: true, btc: true, usdTzsRate: true, exchange: true, note: true })
   .strict()
   .superRefine(checkRecord)
   .transform(toRecord);

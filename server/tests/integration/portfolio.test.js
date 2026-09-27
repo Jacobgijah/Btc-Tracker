@@ -62,6 +62,7 @@ describe('GET /portfolio/summary', () => {
       usdTzs: '2700.0000',
       btcTzs: '297000000.00',
       timestamp: '2026-04-02T00:00:00.000Z',
+      stale: true,
     });
     expect(body.TZS).toEqual(EXPECTED_AVERAGE.TZS);
     expect(body.USD).toEqual(EXPECTED_AVERAGE.USD);

@@ -14,6 +14,10 @@ const PROTECTED = [
   ['get', '/portfolio/ledger'],
   ['get', '/settings'],
   ['patch', '/settings'],
+  ['get', '/prices/latest'],
+  ['post', '/prices/refresh'],
+  ['get', '/prices/history'],
+  ['get', '/prices/fx?date=2026-01-10'],
 ];
 
 describe('auth guard', () => {

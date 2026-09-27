@@ -7,6 +7,7 @@ import authRoutes from './routes/auth.routes.js';
 import transactionRoutes from './routes/transactions.routes.js';
 import portfolioRoutes from './routes/portfolio.routes.js';
 import settingsRoutes from './routes/settings.routes.js';
+import pricesRoutes from './routes/prices.routes.js';
 import { notFound, errorHandler } from './middleware/errorHandler.js';
 
 export const app = express();
@@ -24,6 +25,7 @@ app.use('/auth', authRoutes);
 app.use('/transactions', transactionRoutes);
 app.use('/portfolio', portfolioRoutes);
 app.use('/settings', settingsRoutes);
+app.use('/prices', pricesRoutes);
 
 app.use(notFound);
 app.use(errorHandler);

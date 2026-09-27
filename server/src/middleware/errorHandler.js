@@ -1,6 +1,7 @@
 import { ZodError } from 'zod';
 import { Prisma } from '@prisma/client';
 import { InsufficientHoldingsError } from '../services/portfolio.engine.js';
+import { HttpError } from '../lib/errors.js';
 
 export function notFound(req, res) {
   res.status(404).json({ error: `Not found: ${req.method} ${req.originalUrl}` });
@@ -11,6 +12,13 @@ export function errorHandler(err, req, res, next) {
   if (err instanceof ZodError) {
     const { formErrors, fieldErrors } = err.flatten();
     return res.status(400).json({ error: 'Validation failed', fieldErrors, formErrors });
+  }
+
+  if (err instanceof HttpError) {
+    return res.status(err.status).json({
+      error: err.message,
+      ...(err.details !== undefined && { details: err.details }),
+    });
   }
 
   if (err instanceof InsufficientHoldingsError) {
