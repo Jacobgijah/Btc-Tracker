@@ -3,25 +3,59 @@
 Personal Bitcoin savings tracker. Single user, buys in TZS and USD, P/L shown in both.
 
 - `server/` — Node.js + Express 5 + Prisma + PostgreSQL API
+- `client/` — React + TypeScript web app (Vite, TanStack Query, Tailwind). See [client/README.md](client/README.md).
 
 ## Setup
 
 ```bash
 docker compose up -d                 # Postgres 16 (set POSTGRES_PORT in a root .env if 5432 is taken)
+npm run install:all                  # root (concurrently), server and client dependencies
 cd server
 cp .env.example .env                 # fill in JWT_SECRET, ADMIN_EMAIL, ADMIN_PASSWORD
-npm install
 npx prisma migrate dev               # create tables
 npm run db:seed                      # create your user + default settings
-npm run dev                          # http://localhost:4000 (also starts the price job)
+cd ..
+npm run dev                          # server + client together
 ```
+
+`npm run dev` at the repo root runs both with [concurrently](https://github.com/open-cli-tools/concurrently)
+(Ctrl+C stops both):
+
+- API: http://localhost:4000 (also starts the price job)
+- App: http://localhost:5173 — sign in with `ADMIN_EMAIL` / `ADMIN_PASSWORD` from `server/.env`
+
+In development the Vite dev server proxies `/api/*` to `http://localhost:4000/*` (the `/api` prefix is
+stripped), so the browser only talks to one origin and CORS never comes into play. To run just one side,
+use `npm run dev` inside `server/` or `client/`.
+
+### Root scripts
+
+| Script | What it does |
+| --- | --- |
+| `npm run dev` | Server (nodemon) + client (Vite) together |
+| `npm test` | Server tests (unit + integration, needs Postgres) then client tests |
+| `npm run build` | Production build of the client into `client/dist` |
+| `npm run lint` | Lint the client (oxlint) |
+| `npm run install:all` | Install dependencies in root, `server/` and `client/` |
+
+### Production
+
+Build the client with `VITE_API_URL` set to the API's public URL (e.g.
+`VITE_API_URL=https://btc-api.example.com npm run build`) and serve `client/dist` as static files with
+a fallback to `index.html` for client-side routes. Set the server's `CLIENT_ORIGIN` to the client's
+origin so CORS allows it. Without `VITE_API_URL` the client calls `/api`, which works if a reverse
+proxy forwards `/api/*` to the server with the prefix stripped.
 
 ## Tests
 
 ```bash
+# in server/
 npm test              # unit + integration
 npm run test:unit     # pure P/L engine only, no database needed
 npm run test:watch
+
+# in client/
+npm test              # Vitest + React Testing Library, API mocked (no server needed)
 ```
 
 Integration tests use a separate database (`btc_tracker_test`) configured in `server/.env.test`;

@@ -1,0 +1,161 @@
+import type { ReactNode } from 'react'
+import { useQuery } from '@tanstack/react-query'
+import { Check, LogOut } from 'lucide-react'
+import { Button, Card, ErrorState, PageHeader, SegmentedControl, Skeleton } from '../../components/ui'
+import { useToast } from '../../components/Toast'
+import { useAuth } from '../auth/AuthContext'
+import { api, errorMessage } from '../../lib/api'
+import { queryKeys, useSettings, useUpdateSettings } from '../../lib/queries'
+import { cx } from '../../lib/cx'
+import type { CostMethod, Currency, Settings } from '../../lib/types'
+
+const COST_METHODS: { value: CostMethod; title: string; body: string }[] = [
+  {
+    value: 'AVERAGE',
+    title: 'Average cost',
+    body: 'Every bitcoin you hold costs the same: the average price you paid. A sell uses that average.',
+  },
+  {
+    value: 'FIFO',
+    title: 'First in, first out (FIFO)',
+    body: 'Sells use up your oldest purchases first, at the price you paid for them.',
+  },
+]
+
+export function SettingsPage() {
+  const settings = useSettings()
+  const me = useQuery({ queryKey: queryKeys.me, queryFn: api.me, staleTime: Infinity })
+  const update = useUpdateSettings()
+  const toast = useToast()
+  const { logout } = useAuth()
+
+  const save = (patch: Partial<Settings>, label: string) =>
+    update.mutate(patch, {
+      onSuccess: () => toast.success(`${label} saved`),
+      onError: (err) => toast.error(`Couldn't save: ${errorMessage(err)}`),
+    })
+
+  return (
+    <div className="mx-auto max-w-2xl space-y-4">
+      <PageHeader title="Settings" />
+
+      {settings.isError ? (
+        <ErrorState title="Couldn't load settings" error={settings.error} onRetry={() => settings.refetch()} />
+      ) : (
+        <>
+          <Card aria-labelledby="cost-heading">
+            <h2 id="cost-heading" className="font-semibold">
+              Cost method
+            </h2>
+            <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">How the cost of the bitcoin you sell is worked out.</p>
+            {settings.isPending ? (
+              <Skeleton className="mt-4 h-40" />
+            ) : (
+              <fieldset className="mt-4">
+                <legend className="sr-only">Cost method</legend>
+                <div className="space-y-2">
+                  {COST_METHODS.map((m) => (
+                    <RadioCard
+                      key={m.value}
+                      name="cost-method"
+                      value={m.value}
+                      checked={settings.data.costMethod === m.value}
+                      onChange={() => save({ costMethod: m.value }, 'Cost method')}
+                      title={m.title}
+                    >
+                      {m.body}
+                    </RadioCard>
+                  ))}
+                </div>
+              </fieldset>
+            )}
+            <p className="mt-3 rounded-xl bg-slate-100 p-3 text-sm text-slate-700 dark:bg-slate-800 dark:text-slate-300">
+              Your <strong>total</strong> profit/loss is the same either way. Only the split between realized
+              (from sells) and unrealized (on what you still hold) changes.
+            </p>
+          </Card>
+
+          <Card aria-labelledby="currency-heading">
+            <h2 id="currency-heading" className="font-semibold">
+              Display currency
+            </h2>
+            <p className="mt-1 mb-3 text-sm text-slate-600 dark:text-slate-400">
+              Used for values and P/L across the app. You can also switch it from the top bar.
+            </p>
+            {settings.isPending ? (
+              <Skeleton className="h-12" />
+            ) : (
+              <SegmentedControl<Currency>
+                name="settings-currency"
+                label="Display currency"
+                hideLabel
+                value={settings.data.displayCurrency}
+                onChange={(displayCurrency) => save({ displayCurrency }, 'Display currency')}
+                options={[
+                  { value: 'TZS', label: 'TZS (TSh)' },
+                  { value: 'USD', label: 'USD ($)' },
+                ]}
+              />
+            )}
+          </Card>
+        </>
+      )}
+
+      <Card aria-labelledby="account-heading">
+        <h2 id="account-heading" className="font-semibold">
+          Account
+        </h2>
+        <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">Signed in as</p>
+        <div className="font-medium break-all">
+          {me.isPending ? <Skeleton className="h-5 w-48" /> : me.isError ? errorMessage(me.error) : me.data.email}
+        </div>
+        <Button onClick={logout} className="mt-4 w-full sm:w-auto">
+          <LogOut className="size-4" aria-hidden /> Log out
+        </Button>
+      </Card>
+    </div>
+  )
+}
+
+function RadioCard({
+  name,
+  value,
+  checked,
+  onChange,
+  title,
+  children,
+}: {
+  name: string
+  value: string
+  checked: boolean
+  onChange: () => void
+  title: string
+  children: ReactNode
+}) {
+  return (
+    <label className="relative block cursor-pointer">
+      <input type="radio" name={name} value={value} checked={checked} onChange={onChange} className="peer sr-only" />
+      <span
+        className={cx(
+          'flex items-start gap-3 rounded-xl border border-slate-300 p-3 transition-colors dark:border-slate-700',
+          'peer-checked:border-btc peer-checked:bg-btc/5 peer-checked:ring-1 peer-checked:ring-btc',
+          'peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-btc',
+        )}
+      >
+        <span
+          className={cx(
+            'mt-0.5 grid size-5 shrink-0 place-items-center rounded-full border',
+            checked ? 'border-btc bg-btc text-slate-950' : 'border-slate-400 dark:border-slate-500',
+          )}
+          aria-hidden
+        >
+          {checked && <Check className="size-3.5" strokeWidth={3} />}
+        </span>
+        <span>
+          <span className="block text-sm font-semibold">{title}</span>
+          <span className="mt-0.5 block text-sm text-slate-600 dark:text-slate-400">{children}</span>
+        </span>
+      </span>
+    </label>
+  )
+}
