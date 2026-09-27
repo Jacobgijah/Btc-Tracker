@@ -1,13 +1,9 @@
 import 'dotenv/config';
 import bcrypt from 'bcryptjs';
 import { PrismaClient } from '@prisma/client';
+import { DEFAULT_SETTINGS } from '../src/constants.js';
 
 const prisma = new PrismaClient();
-
-const DEFAULT_SETTINGS = {
-  displayCurrency: 'TZS',
-  costMethod: 'AVERAGE',
-};
 
 async function main() {
   const email = process.env.ADMIN_EMAIL?.trim().toLowerCase();

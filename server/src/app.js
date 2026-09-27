@@ -4,6 +4,9 @@ import helmet from 'helmet';
 import cors from 'cors';
 import { config } from './config.js';
 import authRoutes from './routes/auth.routes.js';
+import transactionRoutes from './routes/transactions.routes.js';
+import portfolioRoutes from './routes/portfolio.routes.js';
+import settingsRoutes from './routes/settings.routes.js';
 import { notFound, errorHandler } from './middleware/errorHandler.js';
 
 export const app = express();
@@ -18,6 +21,9 @@ app.get('/health', (req, res) => {
 });
 
 app.use('/auth', authRoutes);
+app.use('/transactions', transactionRoutes);
+app.use('/portfolio', portfolioRoutes);
+app.use('/settings', settingsRoutes);
 
 app.use(notFound);
 app.use(errorHandler);
