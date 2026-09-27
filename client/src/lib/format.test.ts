@@ -2,8 +2,14 @@ import { describe, expect, it } from 'vitest'
 import { D } from './money'
 import {
   DASH,
+  formatAxisDay,
   formatBTC,
+  formatCompactBTC,
+  formatCompactFiat,
+  formatCompactSats,
   formatDateTime,
+  formatDay,
+  formatMonth,
   formatFiat,
   formatPct,
   formatRate,
@@ -133,6 +139,78 @@ describe('formatRate', () => {
     expect(formatRate('2656.3489')).toBe('2,656.35')
     expect(formatRate('2656.3489', 4)).toBe('2,656.3489')
     expect(formatRate(null)).toBe(DASH)
+  })
+})
+
+describe('formatCompactFiat', () => {
+  it('abbreviates with K/M/B and at most 3 significant figures', () => {
+    expect(formatCompactFiat('3564000.00', 'TZS')).toBe('TSh 3.6M')
+    expect(formatCompactFiat('3500000', 'TZS')).toBe('TSh 3.5M')
+    expect(formatCompactFiat('1234.56', 'USD')).toBe('$1.2K')
+    expect(formatCompactFiat('12345', 'USD')).toBe('$12.3K')
+    expect(formatCompactFiat('123456', 'USD')).toBe('$123K')
+    expect(formatCompactFiat('297000000', 'TZS')).toBe('TSh 297M')
+    expect(formatCompactFiat('1500000000', 'TZS')).toBe('TSh 1.5B')
+    expect(formatCompactFiat('2000000000000', 'TZS')).toBe('TSh 2T')
+    expect(formatCompactFiat('1000', 'USD')).toBe('$1K')
+  })
+
+  it('keeps small values readable', () => {
+    expect(formatCompactFiat('950', 'USD')).toBe('$950')
+    expect(formatCompactFiat('27.20', 'USD')).toBe('$27.2')
+    expect(formatCompactFiat('0.5', 'USD')).toBe('$0.5')
+    expect(formatCompactFiat('0', 'TZS')).toBe('TSh 0')
+  })
+
+  it('rolls over to the next unit instead of showing 1000K', () => {
+    expect(formatCompactFiat('999950', 'TZS')).toBe('TSh 1M')
+    expect(formatCompactFiat('999.6', 'USD')).toBe('$1K')
+    expect(formatCompactFiat('999999999', 'TZS')).toBe('TSh 1B')
+    expect(formatCompactFiat('99960', 'USD')).toBe('$100K')
+  })
+
+  it('signs negatives with a minus and positives on request', () => {
+    expect(formatCompactFiat('-25000', 'TZS')).toBe('−TSh 25K')
+    expect(formatCompactFiat('283520', 'TZS', { signed: true })).toBe('+TSh 284K')
+    expect(formatCompactFiat('-0.001', 'USD', { signed: true })).toBe('$0')
+    expect(formatCompactFiat(null, 'USD')).toBe(DASH)
+  })
+
+  it('accepts chart tick numbers and decimal.js values', () => {
+    expect(formatCompactFiat(2500000, 'TZS')).toBe('TSh 2.5M')
+    expect(formatCompactFiat(new D('1').div(3), 'USD')).toBe('$0.33')
+  })
+})
+
+describe('formatCompactSats / formatCompactBTC', () => {
+  it('abbreviates sats', () => {
+    expect(formatCompactSats('1200000')).toBe('1.2M sats')
+    expect(formatCompactSats('500')).toBe('500 sats')
+    expect(formatCompactSats(null)).toBe(DASH)
+  })
+
+  it('drops trailing zeros from BTC', () => {
+    expect(formatCompactBTC('0.01200000')).toBe('0.012 BTC')
+    expect(formatCompactBTC('1')).toBe('1 BTC')
+    expect(formatCompactBTC('0.00000001')).toBe('0.00000001 BTC')
+    expect(formatCompactBTC('0')).toBe('0 BTC')
+  })
+})
+
+describe('day and month formats', () => {
+  it('formats calendar days without shifting them by time zone', () => {
+    expect(formatDay('2026-01-10')).toBe('10 Jan 2026')
+    expect(formatDay('2026-12-31')).toBe('31 Dec 2026')
+    expect(formatDay('nope')).toBe(DASH)
+    expect(formatMonth('2026-01')).toBe('Jan 2026')
+    expect(formatMonth('2026-01', { short: true })).toBe('Jan')
+  })
+
+  it('picks axis detail from the visible span', () => {
+    expect(formatAxisDay('2026-01-10', 30)).toBe('10 Jan')
+    expect(formatAxisDay('2026-01-10', 365)).toBe('Jan')
+    expect(formatAxisDay('2026-01-10', 900)).toBe('Jan 2026')
+    expect(formatAxisDay('bad', 30)).toBe('')
   })
 })
 

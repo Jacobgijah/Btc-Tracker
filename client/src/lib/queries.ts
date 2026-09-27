@@ -1,11 +1,15 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api, type TransactionFilters } from './api'
-import type { Currency, Settings } from './types'
+import type { Currency, HistoryRange, Settings } from './types'
 
 export const queryKeys = {
   me: ['me'] as const,
   settings: ['settings'] as const,
   portfolio: ['portfolio'] as const,
+  // Under "portfolio" so every ledger or settings change refreshes the charts too.
+  history: (range: HistoryRange, currency: Currency) => ['portfolio', 'history', range, currency] as const,
+  monthly: (currency: Currency) => ['portfolio', 'monthly', currency] as const,
+  ledger: ['portfolio', 'ledger'] as const,
   transactions: ['transactions'] as const,
   transactionList: (filters: TransactionFilters) => ['transactions', 'list', filters] as const,
   transaction: (id: number) => ['transactions', 'one', id] as const,
@@ -44,6 +48,23 @@ export function useUpdateSettings() {
 
 export function usePortfolio() {
   return useQuery({ queryKey: queryKeys.portfolio, queryFn: api.portfolioSummary })
+}
+
+export function useHistory(range: HistoryRange, currency: Currency) {
+  return useQuery({
+    queryKey: queryKeys.history(range, currency),
+    queryFn: () => api.portfolioHistory(range, currency),
+    // Keep the previous range on screen while the next one loads.
+    placeholderData: keepPreviousData,
+  })
+}
+
+export function useMonthly(currency: Currency) {
+  return useQuery({ queryKey: queryKeys.monthly(currency), queryFn: () => api.portfolioMonthly(currency) })
+}
+
+export function useLedger() {
+  return useQuery({ queryKey: queryKeys.ledger, queryFn: api.portfolioLedger })
 }
 
 /** After any ledger change, everything derived from transactions is stale. */

@@ -90,6 +90,99 @@ export function formatRate(value: NumLike, dp = 2): string {
   return `${signFor(d, dp, false)}${absFixed(d, dp)}`
 }
 
+// ---------------------------------------------------------------------------
+// Compact formats, for chart axes and tight spaces
+
+const COMPACT_UNITS: [suffix: string, size: Dec][] = [
+  ['T', new D('1e12')],
+  ['B', new D('1e9')],
+  ['M', new D('1e6')],
+  ['K', new D('1e3')],
+]
+
+/** |d| to at most 3 significant figures with a K/M/B/T suffix: 3.6M, 12.3K, 950, 27.2, 0.5. */
+function compactAbs(d: Dec): string {
+  const abs = d.abs()
+  // Largest unit first; a value that rounds up to 1000 of a unit moves to the next one.
+  for (let i = 0; i < COMPACT_UNITS.length; i++) {
+    const [suffix, size] = COMPACT_UNITS[i]
+    if (abs.lt(size)) continue
+    const scaled = abs.div(size)
+    const rounded = scaled.toDecimalPlaces(scaled.gte(100) ? 0 : 1)
+    if (rounded.gte(1000) && i > 0) return `${abs.div(COMPACT_UNITS[i - 1][1]).toDecimalPlaces(1).toFixed()}${COMPACT_UNITS[i - 1][0]}`
+    return `${rounded.toFixed()}${suffix}`
+  }
+  const small = abs.gte(100) ? abs.toDecimalPlaces(0) : abs.toDecimalPlaces(abs.gte(10) ? 1 : 2)
+  return small.gte(1000) ? '1K' : small.toFixed()
+}
+
+function compactSign(d: Dec, text: string, signed: boolean): string {
+  if (/^0(\.0+)?[KMBT]?$/.test(text)) return ''
+  if (d.isNegative()) return MINUS
+  return signed ? '+' : ''
+}
+
+/** "TSh 3.6M", "$1.2K", "$950", "−$27.2" — for axis ticks and small labels. */
+export function formatCompactFiat(value: NumLike, currency: Currency, { signed = false }: FormatOptions = {}): string {
+  const d = toDec(value)
+  if (!d) return DASH
+  const text = compactAbs(d)
+  return `${compactSign(d, text, signed)}${currency === 'TZS' ? 'TSh ' : '$'}${text}`
+}
+
+/** "1.2M sats" */
+export function formatCompactSats(value: NumLike): string {
+  const d = toDec(value)
+  if (!d) return DASH
+  const text = compactAbs(d)
+  return `${compactSign(d, text, false)}${text} sats`
+}
+
+/** BTC without trailing zeros, for axes: "0.012 BTC", "1.5 BTC". */
+export function formatCompactBTC(value: NumLike): string {
+  const d = toDec(value)
+  if (!d) return DASH
+  const text = d.abs().toDecimalPlaces(8).toFixed()
+  return `${d.isNegative() && text !== '0' ? MINUS : ''}${text} BTC`
+}
+
+// Calendar days ("YYYY-MM-DD") and months ("YYYY-MM") from the server are dates, not
+// instants, so they are formatted in UTC to never shift by a day.
+const dayFmt = new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' })
+const dayMonthFmt = new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short', timeZone: 'UTC' })
+const monthFmt = new Intl.DateTimeFormat('en-GB', { month: 'short', timeZone: 'UTC' })
+const monthYearFmt = new Intl.DateTimeFormat('en-GB', { month: 'short', year: 'numeric', timeZone: 'UTC' })
+
+function parseDay(day: string | null | undefined): Date | null {
+  if (!day || !/^\d{4}-\d{2}(-\d{2})?$/.test(day)) return null
+  const d = new Date(`${day.length === 7 ? `${day}-01` : day}T00:00:00Z`)
+  return Number.isNaN(d.getTime()) ? null : d
+}
+
+/** "10 Jan 2026" */
+export function formatDay(day: string | null | undefined): string {
+  const d = parseDay(day)
+  return d ? dayFmt.format(d) : DASH
+}
+
+/** "Jan 2026" for "2026-01"; `short` gives "Jan". */
+export function formatMonth(month: string | null | undefined, { short = false } = {}): string {
+  const d = parseDay(month)
+  return d ? (short ? monthFmt : monthYearFmt).format(d) : DASH
+}
+
+/**
+ * Axis label for a day, detailed enough for the visible span:
+ * up to ~3 months "10 Jan"; up to ~13 months "Jan"; longer "Jan 2026".
+ */
+export function formatAxisDay(day: string, spanDays: number): string {
+  const d = parseDay(day)
+  if (!d) return ''
+  if (spanDays <= 100) return dayMonthFmt.format(d)
+  if (spanDays <= 400) return monthFmt.format(d)
+  return monthYearFmt.format(d)
+}
+
 export type Tone = 'positive' | 'negative' | 'neutral'
 
 /** Colour tone for a P/L value: zero, null and invalid values are neutral. */

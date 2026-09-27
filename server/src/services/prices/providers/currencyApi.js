@@ -16,8 +16,22 @@ const schema = z.object({
 });
 
 /** USD/TZS published for a given UTC day ("YYYY-MM-DD"). Throws HttpRequestError(404) if none. */
-export async function fetchUsdTzsForDate(day) {
-  return parseResponse(schema, await fetchJson(urlFor(day))).usd.tzs;
+export async function fetchUsdTzsForDate(day, httpOptions = {}) {
+  return parseResponse(schema, await fetchJson(urlFor(day), httpOptions)).usd.tzs;
+}
+
+// jsDelivr's package metadata has a dist-tag per published day, so the backfill
+// can skip unpublished days instead of probing each one for a 404. Verified 2026-09-28:
+//   {"type":"npm","name":"@fawazahmed0/currency-api","tags":{"2024-03-02":"2024.3.2",...,"latest":"2026.9.27"},"versions":[...]}
+//   938 dated tags, 2024-03-02 .. 2026-09-27; 2025-12-10 and 2026-08-19 were never published.
+export const PACKAGE_METADATA_URL = 'https://data.jsdelivr.com/v1/packages/npm/@fawazahmed0/currency-api';
+
+const metadataSchema = z.object({ tags: z.record(z.string()) });
+
+/** Set of "YYYY-MM-DD" days that have a published release. */
+export async function fetchPublishedDays(httpOptions = {}) {
+  const { tags } = parseResponse(metadataSchema, await fetchJson(PACKAGE_METADATA_URL, httpOptions));
+  return new Set(Object.keys(tags).filter((tag) => /^\d{4}-\d{2}-\d{2}$/.test(tag)));
 }
 
 export default {

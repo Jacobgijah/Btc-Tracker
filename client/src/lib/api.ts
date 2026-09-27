@@ -1,6 +1,11 @@
 import type {
+  Currency,
   FxRate,
+  HistoryRange,
+  LedgerRow,
   LoginResponse,
+  MonthlyReport,
+  PortfolioHistory,
   PortfolioSummary,
   PriceSnapshot,
   Settings,
@@ -162,6 +167,10 @@ export const api = {
   deleteTransaction: (id: number) => request<void>(`/transactions/${id}`, { method: 'DELETE' }),
 
   portfolioSummary: () => request<PortfolioSummary>('/portfolio/summary'),
+  portfolioHistory: (range: HistoryRange, currency: Currency) =>
+    request<PortfolioHistory>('/portfolio/history', { query: { range, currency } }),
+  portfolioMonthly: (currency: Currency) => request<MonthlyReport>('/portfolio/monthly', { query: { currency } }),
+  portfolioLedger: () => request<LedgerRow[]>('/portfolio/ledger'),
 
   refreshPrices: () => request<PriceSnapshot>('/prices/refresh', { method: 'POST' }),
   fxForDate: (date: string) => request<FxRate>('/prices/fx', { query: { date } }),

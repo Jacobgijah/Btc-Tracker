@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react'
+import { lazy, Suspense, type ReactNode } from 'react'
 import { Link } from 'react-router'
 import { useQuery } from '@tanstack/react-query'
 import { ArrowRight, Info, PiggyBank, Plus } from 'lucide-react'
@@ -8,6 +8,9 @@ import { formatBTC, formatDate, formatFiat, formatPct, formatSats, DASH } from '
 import { queryKeys, useDisplayCurrency, usePortfolio } from '../../lib/queries'
 import type { Currency, CurrencyFigures, PortfolioSummary, Transaction } from '../../lib/types'
 import { PriceCard } from './PriceCard'
+
+// Recharts loads as its own chunk, after the numbers are on screen.
+const DashboardCharts = lazy(() => import('../charts/ChartsPage').then((m) => ({ default: m.DashboardCharts })))
 
 export function DashboardPage() {
   const currency = useDisplayCurrency()
@@ -33,6 +36,9 @@ export function DashboardPage() {
         <div className="space-y-4">
           <Headline summary={portfolio.data} currency={currency} />
           <Stats summary={portfolio.data} currency={currency} />
+          <Suspense fallback={<Skeleton className="h-64 w-full" />}>
+            <DashboardCharts summary={portfolio.data} currency={currency} />
+          </Suspense>
           <div className="grid gap-4 lg:grid-cols-2">
             <PriceCard price={portfolio.data.price} />
             <RecentTransactions />

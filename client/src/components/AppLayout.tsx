@@ -1,5 +1,5 @@
 import { NavLink, Outlet } from 'react-router'
-import { Bitcoin, LayoutDashboard, List, LogOut, Plus, Settings } from 'lucide-react'
+import { Bitcoin, ChartLine, LayoutDashboard, List, LogOut, Plus, Settings } from 'lucide-react'
 import { useAuth } from '../features/auth/AuthContext'
 import { CurrencyToggle } from './CurrencyToggle'
 import { LinkButton } from './ui'
@@ -7,6 +7,7 @@ import { cx } from '../lib/cx'
 
 const NAV = [
   { to: '/', label: 'Dashboard', Icon: LayoutDashboard, end: true },
+  { to: '/charts', label: 'Charts', Icon: ChartLine, end: true },
   { to: '/transactions', label: 'Transactions', Icon: List, end: true },
   { to: '/settings', label: 'Settings', Icon: Settings, end: true },
 ]
@@ -82,8 +83,8 @@ export function AppLayout() {
         aria-label="Main"
         className="fixed inset-x-0 bottom-0 z-30 border-t border-slate-200 bg-white/95 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden dark:border-slate-800 dark:bg-[#0b1120]/95"
       >
-        <ul className="grid grid-cols-4">
-          {[NAV[0], NAV[1]].map((item) => (
+        <ul className="grid grid-cols-5">
+          {[NAV[0], NAV[1], NAV[2]].map((item) => (
             <BottomNavItem key={item.to} {...item} />
           ))}
           <li>
@@ -102,7 +103,7 @@ export function AppLayout() {
               Add
             </NavLink>
           </li>
-          <BottomNavItem {...NAV[2]} />
+          <BottomNavItem {...NAV[3]} />
         </ul>
       </nav>
     </div>

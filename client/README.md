@@ -19,6 +19,7 @@ npm run build        # type-check + production build into dist/
 | --- | --- |
 | `/login` | Email + password. Shows the server's message (e.g. rate-limited login). |
 | `/` | Current value + unrealized P/L, stat cards, BTC price card with refresh, last 5 transactions. Empty state for a new ledger; "—" plus an explanation when there's no price yet. |
+| `/charts` | Every chart full size: FX split card (TZS only), value vs cost basis, BTC price vs average cost with buy ▲ / sell ▼ markers, holdings over time (BTC or sats), monthly savings. Each has its own 1M/3M/6M/1Y/ALL range. The dashboard shows the FX card and the first two charts in compact form. |
 | `/transactions` | Type / date filters and pagination (in the URL). Table on desktop, cards on mobile. Edit and delete (with confirmation; a refused delete explains which later sell it would break). |
 | `/transactions/new`, `/transactions/:id/edit` | Form with live preview. USD/TZS rate is pre-filled from `GET /prices/fx` for the chosen date and stays editable. Sells show current holdings. |
 | `/settings` | Cost method (AVERAGE / FIFO), display currency, signed-in email, log out. |
@@ -38,7 +39,17 @@ The TZS | USD toggle in the top bar saves `displayCurrency` to the server and ap
   rules (≤ 8 dp BTC / whole sats, ≤ 2 dp fiat, ≤ 4 dp rate, fee < amount on a sell, no future dates,
   text lengths). The server is still the authority: its 400 field errors and 422s are mapped back
   onto the form.
-- Query keys live in `src/lib/queries.ts`; every ledger change invalidates `transactions` and `portfolio`.
+- Query keys live in `src/lib/queries.ts`; every ledger change invalidates `transactions` and `portfolio`
+  (history, monthly and ledger keys sit under `portfolio`, so charts refresh too).
+- `src/features/charts/` — Recharts, loaded as a separate chunk (`React.lazy`). API decimal strings are
+  turned into numbers only for chart geometry (`plot()` in `chartUtils.ts`); every value shown in a
+  tooltip or label is formatted from the original string. Axis ticks use the compact formatters in
+  `format.ts` (`TSh 3.6M`, `$1.2K`, `1.2M sats`); tick count follows the chart width, and the first and
+  last x labels are anchored inwards so nothing is clipped at 375px.
+- Chart colours (`chartUtils.ts`) were checked with a CVD/contrast palette validator for both themes:
+  value/price blue, cost orange-red, buy green ▲, sell red ▼ (shape as well as colour), sats aqua.
+  Bitcoin orange stays a UI accent. The monthly chart puts sats in a second aligned panel rather than
+  a second y-axis.
 
 ## Notes
 

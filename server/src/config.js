@@ -1,6 +1,7 @@
 import 'dotenv/config';
 import cron from 'node-cron';
 import { z } from 'zod';
+import { isValidTimeZone } from './lib/days.js';
 
 const booleanString = z
   .enum(['true', 'false'], { errorMap: () => ({ message: 'must be "true" or "false"' }) })
@@ -33,6 +34,18 @@ const envSchema = z
       .positive('PRICE_STALE_MINUTES must be > 0')
       .default(60),
     ENABLE_PRICE_JOB: booleanString.optional(),
+
+    // Daily prices / charts
+    APP_TIMEZONE: z
+      .string()
+      .trim()
+      .default('Africa/Dar_es_Salaam')
+      .refine(isValidTimeZone, 'APP_TIMEZONE must be an IANA time zone, e.g. Africa/Dar_es_Salaam'),
+    DAILY_PRICE_CRON: z
+      .string()
+      .trim()
+      .default('10 0 * * *')
+      .refine((v) => cron.validate(v), 'DAILY_PRICE_CRON must be a valid cron expression'),
   })
   .transform((env) => ({
     ...env,
