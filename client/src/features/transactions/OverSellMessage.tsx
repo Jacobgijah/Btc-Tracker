@@ -1,6 +1,6 @@
 import { Link } from 'react-router'
 import { useQuery } from '@tanstack/react-query'
-import { AlertTriangle } from 'lucide-react'
+import { LINK_CLASSES, Notice } from '../../components/ui'
 import { ApiError, api } from '../../lib/api'
 import { formatBTC, formatDate, formatDateTime } from '../../lib/format'
 import { satsToBtc } from '../../lib/money'
@@ -47,25 +47,22 @@ export function OverSellMessage({
   }
 
   return (
-    <div
+    <Notice
+      tone="error"
       role="alert"
-      className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-900 dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-100"
+      title={action === 'delete' ? "Can't delete this transaction" : "Can't save: not enough BTC"}
     >
-      <p className="flex items-start gap-2 font-semibold">
-        <AlertTriangle className="mt-0.5 size-4 shrink-0" aria-hidden />
-        {action === 'delete' ? "Can't delete this transaction" : "Can't save: not enough BTC"}
-      </p>
-      <p className="mt-1">{explanation}</p>
+      <p>{explanation}</p>
       {otherId !== null && (
         <p className="mt-2">
           Conflicts with{' '}
-          <Link to={`/transactions/${otherId}/edit`} className="font-semibold underline underline-offset-2">
+          <Link to={`/transactions/${otherId}/edit`} className={LINK_CLASSES}>
             sell #{otherId}
             {other.data && ` · ${formatDateTime(other.data.date)} · ${formatBTC(other.data.btc)}`}
           </Link>
         </p>
       )}
-      <p className="mt-2 text-xs opacity-80">Server message: {error.message}</p>
-    </div>
+      <p className="mt-2 text-xs text-text-muted">Server message: {error.message}</p>
+    </Notice>
   )
 }

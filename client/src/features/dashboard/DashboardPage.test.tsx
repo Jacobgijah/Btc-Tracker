@@ -50,8 +50,10 @@ describe('Dashboard', () => {
 
     const value = await screen.findByRole('region', { name: 'Current value' })
     expect(within(value).getByText('TSh 3,564,000')).toBeInTheDocument()
+    // Gain: gold, "+" sign and a ▲ icon, so it isn't colour alone
     const pnl = within(value).getByText('+TSh 283,520')
-    expect(pnl.className).toMatch(/emerald/)
+    expect(pnl.className).toMatch(/\btext-gain\b/)
+    expect(pnl.querySelector('svg path')?.getAttribute('d')).toMatch(/^M5 1\.5/) // ▲
     expect(within(value).getByText('(+8.64%)')).toBeInTheDocument()
 
     await user.click(screen.getByRole('radio', { name: 'USD' }))

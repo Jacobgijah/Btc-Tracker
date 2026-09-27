@@ -185,17 +185,15 @@ export function formatAxisDay(day: string, spanDays: number): string {
 
 export type Tone = 'positive' | 'negative' | 'neutral'
 
-/** Colour tone for a P/L value: zero, null and invalid values are neutral. */
-export function plTone(value: NumLike): Tone {
+/**
+ * Tone of a P/L value: null, invalid and values that round to zero (at `dp`,
+ * like the formatted number, which then carries no sign) are neutral.
+ * Colours per tone live with the Pnl component in components/ui.tsx.
+ */
+export function plTone(value: NumLike, dp = 2): Tone {
   const d = toDec(value)
-  if (!d || d.isZero()) return 'neutral'
+  if (!d || d.toDecimalPlaces(dp).isZero()) return 'neutral'
   return d.isNegative() ? 'negative' : 'positive'
-}
-
-export const TONE_CLASSES: Record<Tone, string> = {
-  positive: 'text-emerald-700 dark:text-emerald-400',
-  negative: 'text-red-700 dark:text-red-400',
-  neutral: 'text-slate-600 dark:text-slate-300',
 }
 
 /** "just now", "5 min ago", "3 h ago", "2 days ago". */

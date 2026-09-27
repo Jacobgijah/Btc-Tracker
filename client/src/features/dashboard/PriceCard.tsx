@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { AlertTriangle, RefreshCw } from 'lucide-react'
-import { Button, Card } from '../../components/ui'
+import { Button, Card, Notice } from '../../components/ui'
 import { useToast } from '../../components/Toast'
 import { ApiError, api, errorMessage } from '../../lib/api'
 import { formatRate, formatRelativeTime, formatTZS, formatUSD } from '../../lib/format'
@@ -40,23 +40,23 @@ export function PriceCard({ price }: { price: PriceSnapshot | null }) {
     <Card aria-labelledby="price-heading">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <h2 id="price-heading" className="text-sm font-medium text-slate-600 dark:text-slate-400">
+          <h2 id="price-heading" className="text-sm font-medium text-text-muted">
             Bitcoin price
           </h2>
           {price ? (
-            <p className="mt-0.5 flex flex-wrap items-center gap-2 text-xs text-slate-600 dark:text-slate-400">
+            <p className="mt-0.5 flex flex-wrap items-center gap-2 text-xs text-text-muted">
               <time dateTime={price.timestamp} title={new Date(price.timestamp).toLocaleString()}>
                 Updated {formatRelativeTime(price.timestamp, now)}
               </time>
               {price.stale && (
-                <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 font-semibold text-amber-900 dark:bg-amber-900/50 dark:text-amber-200">
+                <span className="inline-flex items-center gap-1 rounded-full border border-warning px-2 py-0.5 font-semibold text-warning">
                   <AlertTriangle className="size-3.5" aria-hidden />
                   Stale
                 </span>
               )}
             </p>
           ) : (
-            <p className="mt-0.5 text-xs text-slate-600 dark:text-slate-400">No price fetched yet</p>
+            <p className="mt-0.5 text-xs text-text-muted">No price fetched yet</p>
           )}
         </div>
         <Button
@@ -73,27 +73,27 @@ export function PriceCard({ price }: { price: PriceSnapshot | null }) {
       {price ? (
         <>
           {price.stale && (
-            <p className="mt-3 rounded-lg bg-amber-50 p-2 text-xs text-amber-900 dark:bg-amber-950/40 dark:text-amber-200">
+            <Notice tone="warning" className="mt-3 text-xs">
               This price is out of date, so value and P/L may be off. Refresh to fetch a new one.
-            </p>
+            </Notice>
           )}
           <dl className="tabular mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
             <div>
-              <dt className="text-xs text-slate-600 dark:text-slate-400">BTC / TZS</dt>
+              <dt className="text-xs text-text-muted">BTC / TZS</dt>
               <dd className="text-lg font-semibold">{formatTZS(price.btcTzs)}</dd>
             </div>
             <div>
-              <dt className="text-xs text-slate-600 dark:text-slate-400">BTC / USD</dt>
+              <dt className="text-xs text-text-muted">BTC / USD</dt>
               <dd className="text-lg font-semibold">{formatUSD(price.btcUsd)}</dd>
             </div>
             <div>
-              <dt className="text-xs text-slate-600 dark:text-slate-400">USD / TZS</dt>
+              <dt className="text-xs text-text-muted">USD / TZS</dt>
               <dd className="text-lg font-semibold">{formatRate(price.usdTzs)}</dd>
             </div>
           </dl>
         </>
       ) : (
-        <p className="mt-3 text-sm text-slate-600 dark:text-slate-400">
+        <p className="mt-3 text-sm text-text-muted">
           Prices are fetched automatically every few minutes while the server runs. Tap refresh to fetch one now.
         </p>
       )}

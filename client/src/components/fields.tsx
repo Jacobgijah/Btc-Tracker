@@ -1,13 +1,13 @@
 import { useId, type ComponentProps, type ReactNode } from 'react'
+import { XCircle } from 'lucide-react'
 import { cx } from '../lib/cx'
 
 const INPUT =
-  'block w-full min-h-11 rounded-xl border bg-white px-3 py-2 text-slate-950 placeholder:text-slate-400 shadow-xs ' +
-  'focus:border-btc focus:outline-2 focus:outline-offset-0 focus:outline-btc/40 ' +
-  'dark:bg-slate-950 dark:text-white dark:placeholder:text-slate-500 disabled:opacity-60'
+  'block w-full min-h-11 rounded-xl border bg-surface px-3 py-2 text-text placeholder:text-text-muted ' +
+  'focus:border-accent focus:outline-2 focus:outline-offset-0 focus:outline-accent disabled:opacity-60'
 
-const borderFor = (error?: string) =>
-  error ? 'border-red-600 dark:border-red-500' : 'border-slate-300 dark:border-slate-700'
+// Invalid: a blue border doubled by a ring (3.99:1, fine for a UI boundary) plus the message with an icon.
+const borderFor = (error?: string) => (error ? 'border-error ring-1 ring-error' : 'border-border-strong')
 
 interface FieldChrome {
   label: ReactNode
@@ -30,19 +30,20 @@ function FieldWrapper({
   return (
     <div className={className}>
       <div className="mb-1.5 flex min-h-6 items-end justify-between gap-2">
-        <label htmlFor={id} className="text-sm font-medium text-slate-700 dark:text-slate-300">
+        <label htmlFor={id} className="text-sm font-medium text-text">
           {label}
         </label>
         {labelAside}
       </div>
       {children}
       {hint && !error && (
-        <p id={`${id}-hint`} className="mt-1.5 text-xs text-slate-600 dark:text-slate-400">
+        <p id={`${id}-hint`} className="mt-1.5 text-xs text-text-muted">
           {hint}
         </p>
       )}
       {error && (
-        <p id={`${id}-error`} className="mt-1.5 text-sm font-medium text-red-700 dark:text-red-400">
+        <p id={`${id}-error`} className="mt-1.5 flex items-start gap-1.5 text-sm font-medium text-text">
+          <XCircle className="mt-0.5 size-4 shrink-0 text-error" aria-hidden />
           {error}
         </p>
       )}
@@ -75,7 +76,7 @@ export function TextField({
           {...props}
         />
         {suffix && (
-          <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-sm font-medium text-slate-500 dark:text-slate-400">
+          <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-sm font-medium text-text-muted">
             {suffix}
           </span>
         )}

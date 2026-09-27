@@ -1,4 +1,5 @@
-import { useLayoutEffect, useRef, useState, useSyncExternalStore } from 'react'
+import { useLayoutEffect, useRef, useState } from 'react'
+import { tokens } from '../../theme/tokens'
 
 /**
  * A decimal string from the API -> a number, for chart geometry ONLY (pixel
@@ -11,61 +12,32 @@ export function plot(value: string | null | undefined): number | null {
   return Number.isFinite(n) ? n : null
 }
 
-// Palette: validated with the dataviz skill's validate_palette.js against the card
-// surfaces (#ffffff light, slate-900 #0f172a dark). Value/price is always blue and
-// cost always orange-red across charts; buy/sell markers also differ by shape
-// (▲/▼), so colour is never the only cue. Bitcoin orange stays a UI accent.
-export interface ChartColors {
-  value: string
-  cost: string
-  buy: string
-  sell: string
-  sats: string
-  grid: string
-  axis: string
-  surface: string
-  cursor: string
-}
+/**
+ * Chart colours by role, from the brand tokens (SVG attributes can't rely on CSS
+ * variables). Gold = your money (value, average cost, buys, invested); blue = the
+ * market / the other side (BTC price, sells, sats); cool-gray = reference lines and
+ * chrome. Series that share a hue also differ by form: buy ▲ vs sell ▼, dashed
+ * cost basis, bars vs line.
+ */
+export const CHART = {
+  value: tokens.gold,
+  cost: tokens.coolGray,
+  price: tokens.blue,
+  avgCost: tokens.gold,
+  buy: tokens.gold,
+  sell: tokens.blue,
+  holdings: tokens.gold,
+  invested: tokens.gold,
+  sats: tokens.blue,
+  axis: tokens.coolGray,
+  grid: tokens.coolGray,
+  /** Grid lines and axis rules: cool-gray at low opacity. */
+  gridOpacity: 0.2,
+  surface: tokens.blackSpaceSoft,
+  cursor: tokens.coolGray,
+} as const
 
-const LIGHT: ChartColors = {
-  value: '#2a78d6',
-  cost: '#eb6834',
-  buy: '#008300',
-  sell: '#e34948',
-  sats: '#1baf7a',
-  grid: '#e2e8f0',
-  axis: '#64748b',
-  surface: '#ffffff',
-  cursor: '#94a3b8',
-}
-
-const DARK: ChartColors = {
-  value: '#3987e5',
-  cost: '#d95926',
-  buy: '#0ca30c',
-  sell: '#e66767',
-  sats: '#199e70',
-  grid: '#1e293b',
-  axis: '#94a3b8',
-  surface: '#0f172a',
-  cursor: '#475569',
-}
-
-const DARK_QUERY = '(prefers-color-scheme: dark)'
-
-function subscribeToScheme(onChange: () => void) {
-  if (typeof window === 'undefined' || !window.matchMedia) return () => {}
-  const mql = window.matchMedia(DARK_QUERY)
-  mql.addEventListener('change', onChange)
-  return () => mql.removeEventListener('change', onChange)
-}
-
-const prefersDark = () => typeof window !== 'undefined' && !!window.matchMedia?.(DARK_QUERY).matches
-
-/** Chart colours for the current light/dark setting (the app follows the system). */
-export function useChartColors(): ChartColors {
-  return useSyncExternalStore(subscribeToScheme, prefersDark, () => false) ? DARK : LIGHT
-}
+export type ChartColors = typeof CHART
 
 /** Tracks an element's width, so charts can size themselves and choose how many ticks fit. */
 export function useElementWidth<T extends HTMLElement>() {

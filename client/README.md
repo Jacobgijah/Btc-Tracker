@@ -6,8 +6,9 @@ TanStack Query, Tailwind CSS 4, react-hook-form + zod, decimal.js, lucide-react.
 ```bash
 npm install
 npm run dev          # http://localhost:5173 (needs the API on :4000; /api is proxied to it)
-npm test             # Vitest + React Testing Library (API mocked)
+npm test             # lint:colors, then Vitest + React Testing Library (API mocked)
 npm run lint         # oxlint, warnings fail
+npm run lint:colors  # fails on any colour outside the brand tokens (see Theme)
 npm run build        # type-check + production build into dist/
 ```
 
@@ -46,10 +47,10 @@ The TZS | USD toggle in the top bar saves `displayCurrency` to the server and ap
   tooltip or label is formatted from the original string. Axis ticks use the compact formatters in
   `format.ts` (`TSh 3.6M`, `$1.2K`, `1.2M sats`); tick count follows the chart width, and the first and
   last x labels are anchored inwards so nothing is clipped at 375px.
-- Chart colours (`chartUtils.ts`) were checked with a CVD/contrast palette validator for both themes:
-  value/price blue, cost orange-red, buy green ▲, sell red ▼ (shape as well as colour), sats aqua.
-  Bitcoin orange stays a UI accent. The monthly chart puts sats in a second aligned panel rather than
-  a second y-axis.
+- Chart colours come from `CHART` in `chartUtils.ts` (built on `src/theme/tokens.ts`): gold = your money
+  (value, average cost, buys, holdings, invested), blue = the market (BTC price, sells, sats), cool-gray =
+  cost basis (dashed) and chrome. Series that share a hue also differ by form (▲ vs ▼, dashed, bars vs
+  line). The monthly chart puts sats in a second aligned panel rather than a second y-axis.
 
 ## Notes
 
@@ -57,5 +58,31 @@ The TZS | USD toggle in the top bar saves `displayCurrency` to the server and ap
   like the server.
 - While the date has just changed, saving is blocked until the rate for the new day has been looked
   up, so a previous day's rate is never saved by accident. A rate you type yourself is never overwritten.
-- Light/dark follows the system setting. Bitcoin orange is used only for accents; primary buttons use
-  near-black text on it for contrast.
+
+## Theme
+
+Dark only, six brand colours and nothing else. `src/theme/tokens.css` defines them in Tailwind 4's `@theme`
+after `--color-*: initial`, so default palette classes (`bg-red-500`, `text-slate-600`, ...) don't exist.
+`src/theme/tokens.ts` repeats the six hex values for SVG charts; `tokens.test.ts` keeps the two identical.
+
+| Token | Hex | Aliases (use these in components) |
+| --- | --- | --- |
+| black-space | `#131313` | `bg`, `on-accent` (text on gold) |
+| black-space-soft | `#1a1a1a` | `surface` (cards, inputs, nav, dialogs, tooltips) |
+| white | `#e9e8e8` | `text` |
+| cool-gray | `#7e8893` | `text-muted`, `border-strong` (inputs, outline buttons); `border`, `hover`, `pressed`, `skeleton` are low-opacity mixes |
+| gold | `#d4af35` | `accent` (primary actions, focus, selected), `gain`, `warning` |
+| blue | `#4a7abd` | `info` (links, info icons), `loss`, `error` |
+
+Contrast (WCAG): white on bg 15.19:1, on surface 14.23:1; gold 8.83 / 8.27; cool-gray 5.16 / 4.83;
+black-space on gold 8.83; **blue only 4.26 / 3.99**, so blue is never used for normal-size text: it goes on
+icons, borders, underlines, chart marks and focus/badge outlines, and as text only at ≥ 24px.
+
+- **P/L** (`Pnl` in `components/ui.tsx`, used everywhere): gain = gold text + "+" + ▲; loss = "−" + blue ▼,
+  with the number itself blue only for the headline (`size="lg"`, 24px) and white elsewhere; zero or "—" =
+  cool-gray.
+- **Errors** are a blue border/ring + ⊗ icon + white text; **warnings** a gold border + ⚠ icon.
+- **Links** are white text with a blue underline.
+- `npm run lint:colors` (also run by `npm test`) fails on colour literals or `rgb()`/`hsl()` outside the token
+  files, default Tailwind palette classes, raw token or `white`/`black` classes where an alias exists, and
+  `dark:` variants.

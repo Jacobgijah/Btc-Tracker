@@ -7,8 +7,9 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "oxlint --deny-warnings",
+    "lint:colors": "node scripts/lint-colors.mjs",
     "typecheck": "tsc -b",
-    "test": "vitest run",
+    "test": "npm run lint:colors && vitest run",
     "test:watch": "vitest",
     "preview": "vite preview"
   },

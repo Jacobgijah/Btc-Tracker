@@ -16,7 +16,7 @@ import {
   type ChartSize,
   type TipProps,
 } from './ChartParts'
-import { pickTicks, plot, spanDays, tickCountFor, useChartColors } from './chartUtils'
+import { pickTicks, plot, spanDays, tickCountFor, CHART } from './chartUtils'
 
 type Unit = 'BTC' | 'SATS'
 
@@ -63,7 +63,7 @@ export function HoldingsChart({ currency, size = 'full' }: { currency: Currency;
 }
 
 function HoldingsPlot({ history, unit, size }: { history: PortfolioHistory; unit: Unit; size: ChartSize }) {
-  const colors = useChartColors()
+  const colors = CHART
   const data = useMemo<Row[]>(
     () =>
       history.points.map((p) => ({
@@ -80,14 +80,14 @@ function HoldingsPlot({ history, unit, size }: { history: PortfolioHistory; unit
     <ChartFrame size={size} label={`Bitcoin held from ${formatDay(history.from)} to ${formatDay(history.to)}`}>
       {(width, height) => (
         <AreaChart width={width} height={height} data={data} margin={{ top: 8, right: 16, bottom: 0, left: 0 }}>
-          <CartesianGrid vertical={false} stroke={colors.grid} />
+          <CartesianGrid vertical={false} stroke={colors.grid} strokeOpacity={colors.gridOpacity} />
           <XAxis
             dataKey="date"
             ticks={pickTicks(dates, tickCountFor(width))}
             interval={0}
             tick={<EdgeAnchoredTick fill={colors.axis} format={(d) => formatAxisDay(d, span)} />}
             tickLine={false}
-            axisLine={{ stroke: colors.grid }}
+            axisLine={{ stroke: colors.grid, strokeOpacity: 0.5 }}
           />
           <YAxis
             width={unit === 'BTC' ? 76 : 70}
@@ -102,9 +102,9 @@ function HoldingsPlot({ history, unit, size }: { history: PortfolioHistory; unit
           <Area
             type="stepAfter"
             dataKey="holdings"
-            stroke={colors.value}
+            stroke={colors.holdings}
             strokeWidth={2}
-            fill={colors.value}
+            fill={colors.holdings}
             fillOpacity={0.1}
             dot={false}
             activeDot={{ r: 4, stroke: colors.surface, strokeWidth: 2 }}

@@ -32,30 +32,30 @@ export function TransactionPreview({ values }: { values: Partial<TransactionForm
     <section
       aria-labelledby="preview-heading"
       aria-live="polite"
-      className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-900/60"
+      className="rounded-2xl border border-dashed border-border-strong bg-bg p-4"
     >
-      <h2 id="preview-heading" className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+      <h2 id="preview-heading" className="text-sm font-semibold text-text">
         Preview
       </h2>
       <dl className="tabular mt-3 grid gap-3 text-sm sm:grid-cols-3">
         <div>
-          <dt className="text-xs text-slate-600 dark:text-slate-400">Bitcoin</dt>
+          <dt className="text-xs text-text-muted">Bitcoin</dt>
           <dd className="font-semibold">{sats && sats > 0n ? formatBTC(satsToBtc(sats)) : DASH}</dd>
-          <dd className="text-xs text-slate-600 dark:text-slate-400">
+          <dd className="text-xs text-text-muted">
             {sats && sats > 0n ? formatSats(sats.toString()) : ''}
           </dd>
         </div>
         <div>
-          <dt className="text-xs text-slate-600 dark:text-slate-400">Price per BTC</dt>
+          <dt className="text-xs text-text-muted">Price per BTC</dt>
           <dd className="font-semibold">{p.own}</dd>
-          <dd className="text-xs text-slate-600 dark:text-slate-400">{p.other}</dd>
+          <dd className="text-xs text-text-muted">{p.other}</dd>
         </div>
         <div>
-          <dt className="text-xs text-slate-600 dark:text-slate-400">
+          <dt className="text-xs text-text-muted">
             {isSell ? 'You receive (after fee)' : 'Total cost (incl. fee)'}
           </dt>
           <dd className="font-semibold">{t.own}</dd>
-          <dd className="text-xs text-slate-600 dark:text-slate-400">{t.other}</dd>
+          <dd className="text-xs text-text-muted">{t.other}</dd>
         </div>
       </dl>
     </section>

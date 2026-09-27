@@ -19,15 +19,15 @@ export function AppLayout() {
     <div className="min-h-dvh">
       <a
         href="#main"
-        className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-50 focus:rounded-lg focus:bg-white focus:px-4 focus:py-2 focus:text-slate-900"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-50 focus:rounded-lg focus:bg-surface focus:px-4 focus:py-2 focus:text-text focus:ring-2 focus:ring-accent"
       >
         Skip to content
       </a>
 
-      <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/90 pt-[env(safe-area-inset-top)] backdrop-blur dark:border-slate-800 dark:bg-[#0b1120]/90">
+      <header className="sticky top-0 z-30 border-b border-border bg-overlay pt-[env(safe-area-inset-top)] backdrop-blur">
         <div className="mx-auto flex h-14 max-w-5xl items-center gap-3 px-4 md:h-16">
-          <NavLink to="/" className="flex items-center gap-2 rounded-lg font-bold text-slate-950 dark:text-white">
-            <span className="grid size-8 place-items-center rounded-full bg-btc text-slate-950">
+          <NavLink to="/" className="flex items-center gap-2 rounded-lg font-bold text-text">
+            <span className="grid size-8 place-items-center rounded-full bg-accent text-on-accent">
               <Bitcoin className="size-5" aria-hidden />
             </span>
             <span className="hidden sm:inline">BTC Tracker</span>
@@ -43,8 +43,8 @@ export function AppLayout() {
                   cx(
                     'relative rounded-lg px-3 py-2 text-sm font-medium transition-colors',
                     isActive
-                      ? 'text-slate-950 after:absolute after:inset-x-3 after:-bottom-[13px] after:h-0.5 after:rounded-full after:bg-btc dark:text-white'
-                      : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white',
+                      ? 'text-accent after:absolute after:inset-x-3 after:-bottom-[13px] after:h-0.5 after:rounded-full after:bg-accent'
+                      : 'text-text-muted hover:bg-hover hover:text-text',
                   )
                 }
               >
@@ -65,7 +65,7 @@ export function AppLayout() {
             <button
               type="button"
               onClick={logout}
-              className="grid size-11 place-items-center rounded-xl text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white"
+              className="grid size-11 place-items-center rounded-xl text-text-muted hover:bg-hover hover:text-text"
               aria-label="Log out"
               title="Log out"
             >
@@ -81,7 +81,7 @@ export function AppLayout() {
 
       <nav
         aria-label="Main"
-        className="fixed inset-x-0 bottom-0 z-30 border-t border-slate-200 bg-white/95 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden dark:border-slate-800 dark:bg-[#0b1120]/95"
+        className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-overlay pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden"
       >
         <ul className="grid grid-cols-5">
           {[NAV[0], NAV[1], NAV[2]].map((item) => (
@@ -93,11 +93,11 @@ export function AppLayout() {
               className={({ isActive }) =>
                 cx(
                   'flex h-16 flex-col items-center justify-center gap-0.5 text-xs font-medium',
-                  isActive ? 'text-slate-950 dark:text-white' : 'text-slate-600 dark:text-slate-300',
+                  isActive ? 'text-accent' : 'text-text-muted',
                 )
               }
             >
-              <span className="grid size-8 place-items-center rounded-full bg-btc text-slate-950 shadow-sm">
+              <span className="grid size-8 place-items-center rounded-full bg-accent text-on-accent">
                 <Plus className="size-5" aria-hidden />
               </span>
               Add
@@ -119,13 +119,13 @@ function BottomNavItem({ to, label, Icon, end }: (typeof NAV)[number]) {
         className={({ isActive }) =>
           cx(
             'flex h-16 flex-col items-center justify-center gap-1 text-xs font-medium',
-            isActive ? 'text-slate-950 dark:text-white' : 'text-slate-600 dark:text-slate-400',
+            isActive ? 'text-accent' : 'text-text-muted',
           )
         }
       >
         {({ isActive }) => (
           <>
-            <Icon className={cx('size-6', isActive && 'text-btc-700 dark:text-btc')} aria-hidden />
+            <Icon className={cx('size-6', isActive && 'text-accent')} aria-hidden />
             {label}
           </>
         )}

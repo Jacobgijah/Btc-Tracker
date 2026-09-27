@@ -25,7 +25,7 @@ import {
   type ChartSize,
   type TipProps,
 } from './ChartParts'
-import { pickTicks, plot, spanDays, tickCountFor, useChartColors, type ChartColors } from './chartUtils'
+import { pickTicks, plot, spanDays, tickCountFor, CHART, type ChartColors } from './chartUtils'
 
 interface Row {
   date: string
@@ -64,7 +64,7 @@ function markerPrice(row: LedgerRow | undefined, currency: Currency, point: Hist
 }
 
 function PricePlot({ history, ledger, size }: { history: PortfolioHistory; ledger: LedgerRow[]; size: ChartSize }) {
-  const colors = useChartColors()
+  const colors = CHART
   const { currency } = history
   const data = useMemo<Row[]>(() => {
     const byDay = new Map<string, LedgerRow[]>()
@@ -89,8 +89,8 @@ function PricePlot({ history, ledger, size }: { history: PortfolioHistory; ledge
     <>
       <ChartLegend
         items={[
-          { label: 'BTC price', color: colors.value, shape: 'line' },
-          { label: 'Your average cost', color: colors.cost, shape: 'step' },
+          { label: 'BTC price', color: colors.price, shape: 'line' },
+          { label: 'Your average cost', color: colors.avgCost, shape: 'step' },
           { label: 'Buy', color: colors.buy, shape: 'up' },
           { label: 'Sell', color: colors.sell, shape: 'down' },
         ]}
@@ -101,14 +101,14 @@ function PricePlot({ history, ledger, size }: { history: PortfolioHistory; ledge
       >
         {(width, height) => (
           <ComposedChart width={width} height={height} data={data} margin={{ top: 12, right: 16, bottom: 0, left: 0 }}>
-            <CartesianGrid vertical={false} stroke={colors.grid} />
+            <CartesianGrid vertical={false} stroke={colors.grid} strokeOpacity={colors.gridOpacity} />
             <XAxis
               dataKey="date"
               ticks={pickTicks(dates, tickCountFor(width))}
               interval={0}
               tick={<EdgeAnchoredTick fill={colors.axis} format={(d) => formatAxisDay(d, span)} />}
               tickLine={false}
-              axisLine={{ stroke: colors.grid }}
+              axisLine={{ stroke: colors.grid, strokeOpacity: 0.5 }}
             />
             <YAxis
               width={72}
@@ -127,7 +127,7 @@ function PricePlot({ history, ledger, size }: { history: PortfolioHistory; ledge
             <Line
               type="linear"
               dataKey="price"
-              stroke={colors.value}
+              stroke={colors.price}
               strokeWidth={2}
               dot={false}
               activeDot={{ r: 4, stroke: colors.surface, strokeWidth: 2 }}
@@ -136,7 +136,7 @@ function PricePlot({ history, ledger, size }: { history: PortfolioHistory; ledge
             <Line
               type="stepAfter"
               dataKey="avg"
-              stroke={colors.cost}
+              stroke={colors.avgCost}
               strokeWidth={2}
               dot={false}
               activeDot={{ r: 4, stroke: colors.surface, strokeWidth: 2 }}
@@ -191,8 +191,8 @@ function PriceTooltip({ active, payload, currency, colors }: TipProps<Row> & { c
         ) : undefined
       }
     >
-      <TooltipRow label="BTC price" color={colors.value} value={formatFiat(p.btcPrice, currency)} />
-      <TooltipRow label="Your avg cost" color={colors.cost} value={formatFiat(p.avgCostPerBtc, currency)} />
+      <TooltipRow label="BTC price" color={colors.price} value={formatFiat(p.btcPrice, currency)} />
+      <TooltipRow label="Your avg cost" color={colors.avgCost} value={formatFiat(p.avgCostPerBtc, currency)} />
     </TooltipBox>
   )
 }
@@ -207,7 +207,7 @@ function TradeLine({ t, currency, colors }: { t: LedgerRow; currency: Currency; 
       <span style={{ color }} aria-hidden>
         {marker}{' '}
       </span>
-      <span className="font-semibold text-slate-900 dark:text-slate-100">{TYPE_LABELS[t.type]}</span>{' '}
+      <span className="font-semibold text-text">{TYPE_LABELS[t.type]}</span>{' '}
       {formatBTC(t.btc)} for {formatFiat(t.fiatAmount, t.fiatCurrency)}
       {fee}
       {t.type !== 'TRANSFER_IN' && <> at {formatFiat(impliedPrice(t, currency), currency)}/BTC</>}

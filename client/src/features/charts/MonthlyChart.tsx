@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { Bar, BarChart, CartesianGrid, Tooltip, XAxis, YAxis } from 'recharts'
+import { Bar, BarChart, CartesianGrid, ComposedChart, Line, Tooltip, XAxis, YAxis } from 'recharts'
 import { ErrorState } from '../../components/ui'
 import {
   formatBTC,
@@ -17,6 +17,7 @@ import {
   ChartEmpty,
   ChartSkeleton,
   EdgeAnchoredTick,
+  LegendKey,
   EMPTY_HISTORY_MESSAGE,
   RangeSelector,
   TooltipBox,
@@ -24,7 +25,7 @@ import {
   type ChartSize,
   type TipProps,
 } from './ChartParts'
-import { pickTicks, plot, tickCountFor, useChartColors, useElementWidth, chartHeight, type ChartColors } from './chartUtils'
+import { plot, tickCountFor, CHART, useElementWidth, chartHeight, type ChartColors } from './chartUtils'
 
 const MONTHS_IN_RANGE: Record<HistoryRange, number> = { '1M': 1, '3M': 3, '6M': 6, '1Y': 12, ALL: Infinity }
 
@@ -36,8 +37,8 @@ interface Row {
 }
 
 /**
- * Fiat invested per month (bars) with sats acquired in a second panel that shares
- * the month axis. Two aligned panels rather than one chart with two y-axes, so
+ * Fiat invested per month (gold bars) with sats acquired (blue line) in a second panel
+ * that shares the month axis. Two aligned panels rather than one chart with two y-axes, so
  * each measure keeps an honest scale.
  */
 export function MonthlyChart({ currency, size = 'full' }: { currency: Currency; size?: ChartSize }) {
@@ -78,7 +79,7 @@ function SavingsSummary({ report }: { report: MonthlyReport }) {
 }
 
 function MonthlyPlot({ report, range, size }: { report: MonthlyReport; range: HistoryRange; size: ChartSize }) {
-  const colors = useChartColors()
+  const colors = CHART
   const { currency } = report
   const [ref, width] = useElementWidth<HTMLDivElement>()
   const data = useMemo<Row[]>(
@@ -91,21 +92,24 @@ function MonthlyPlot({ report, range, size }: { report: MonthlyReport; range: Hi
   const total = chartHeight(width, size)
   const topHeight = Math.round(total * 0.58)
   const bottomHeight = total - topHeight + 24
-  const ticks = pickTicks(
-    data.map((d) => d.month),
-    tickCountFor(width, 2, 12) - (width < 480 ? 1 : 0),
-  )
+  // Every k-th month counting back from the latest, so labels are regularly spaced
+  // (picking "n evenly" from 12 months skips irregular ones and looks like a gap).
+  const fit = tickCountFor(width, 2, 12) - (width < 480 ? 1 : 0)
+  const step = Math.ceil(data.length / fit)
+  const ticks = data.map((d) => d.month).filter((_, i) => (data.length - 1 - i) % step === 0)
   // "Oct 2025, Nov, Dec, Jan 2026, Feb": the year only where it starts or changes.
   const monthLabel = (m: string, index: number) => formatMonth(m, { short: index > 0 && !m.endsWith('-01') })
   const xAxis = (hide: boolean) => (
     <XAxis
       dataKey="month"
       hide={hide}
+      // Band scale in both panels, so the line's points sit over the bars' centres.
+      scale="band"
       ticks={ticks}
       interval={0}
       tick={<EdgeAnchoredTick fill={colors.axis} format={monthLabel} />}
       tickLine={false}
-      axisLine={{ stroke: colors.grid }}
+      axisLine={{ stroke: colors.grid, strokeOpacity: 0.5 }}
     />
   )
   const yTick = { fontSize: 11, fill: colors.axis }
@@ -115,10 +119,13 @@ function MonthlyPlot({ report, range, size }: { report: MonthlyReport; range: Hi
     <div ref={ref} className="w-full select-none" style={{ minHeight: total }}>
       {width > 0 && (
         <>
-          <p className="text-xs font-medium text-slate-600 dark:text-slate-400">Invested ({currency}, incl. fees)</p>
+          <p className="flex items-center gap-1.5 text-xs font-medium text-text">
+            <LegendKey shape="bar" color={colors.invested} />
+            Invested ({currency}, incl. fees)
+          </p>
           <div role="img" aria-label={`Money invested per month in ${currency}`}>
             <BarChart width={width} height={topHeight} data={data} syncId="monthly" margin={{ top: 12, right: 8, bottom: 0, left: 0 }}>
-              <CartesianGrid vertical={false} stroke={colors.grid} />
+              <CartesianGrid vertical={false} stroke={colors.grid} strokeOpacity={colors.gridOpacity} />
               {xAxis(true)}
               <YAxis
                 width={72}
@@ -130,16 +137,19 @@ function MonthlyPlot({ report, range, size }: { report: MonthlyReport; range: Hi
               />
               <Tooltip
                 content={(props: TipProps<Row>) => <MonthTooltip {...props} currency={currency} colors={colors} />}
-                cursor={{ fill: colors.grid, opacity: 0.6 }}
+                cursor={{ fill: colors.grid, fillOpacity: 0.12 }}
                 isAnimationActive={false}
               />
-              <Bar dataKey="invested" fill={colors.value} {...barProps} />
+              <Bar dataKey="invested" fill={colors.invested} {...barProps} />
             </BarChart>
           </div>
-          <p className="mt-2 text-xs font-medium text-slate-600 dark:text-slate-400">Sats acquired</p>
+          <p className="mt-2 flex items-center gap-1.5 text-xs font-medium text-text">
+            <LegendKey shape="line" color={colors.sats} />
+            Sats acquired
+          </p>
           <div role="img" aria-label="Sats acquired per month">
-            <BarChart width={width} height={bottomHeight} data={data} syncId="monthly" margin={{ top: 12, right: 8, bottom: 0, left: 0 }}>
-              <CartesianGrid vertical={false} stroke={colors.grid} />
+            <ComposedChart width={width} height={bottomHeight} data={data} syncId="monthly" margin={{ top: 12, right: 8, bottom: 0, left: 0 }}>
+              <CartesianGrid vertical={false} stroke={colors.grid} strokeOpacity={colors.gridOpacity} />
               {xAxis(false)}
               <YAxis
                 width={72}
@@ -150,9 +160,17 @@ function MonthlyPlot({ report, range, size }: { report: MonthlyReport; range: Hi
                 axisLine={false}
               />
               {/* Synced with the panel above, which shows the tooltip. */}
-              <Tooltip content={() => null} cursor={{ fill: colors.grid, opacity: 0.6 }} isAnimationActive={false} />
-              <Bar dataKey="sats" fill={colors.sats} {...barProps} />
-            </BarChart>
+              <Tooltip content={() => null} cursor={{ fill: colors.grid, fillOpacity: 0.12 }} isAnimationActive={false} />
+              <Line
+                type="linear"
+                dataKey="sats"
+                stroke={colors.sats}
+                strokeWidth={2}
+                dot={{ r: 3, fill: colors.sats, stroke: colors.surface, strokeWidth: 1 }}
+                activeDot={{ r: 5, fill: colors.sats, stroke: colors.surface, strokeWidth: 2 }}
+                isAnimationActive={false}
+              />
+            </ComposedChart>
           </div>
         </>
       )}
@@ -172,7 +190,7 @@ function MonthTooltip({ active, payload, currency, colors }: TipProps<Row> & { c
           : undefined
       }
     >
-      <TooltipRow label="Invested" color={colors.value} value={formatFiat(m.invested, currency)} />
+      <TooltipRow label="Invested" color={colors.invested} value={formatFiat(m.invested, currency)} />
       <TooltipRow label="Sats acquired" color={colors.sats} value={formatSats(m.satsAcquired)} />
       <TooltipRow label="Buys" value={m.buyCount + (m.transferInCount ? ` (+${m.transferInCount} transfer in)` : '')} />
       <TooltipRow label="Avg buy price" value={formatFiat(m.avgBuyPrice, currency)} />

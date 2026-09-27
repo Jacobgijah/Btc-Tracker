@@ -7,6 +7,7 @@ export function ConfirmDialog({
   title,
   children,
   confirmLabel,
+  confirmIcon,
   busy = false,
   canConfirm = true,
   onConfirm,
@@ -16,6 +17,8 @@ export function ConfirmDialog({
   title: string
   children: ReactNode
   confirmLabel: string
+  /** Icon on the (outline) confirm button, so it doesn't rely on its blue border alone. */
+  confirmIcon?: ReactNode
   busy?: boolean
   /** false hides the confirm button (e.g. after the action was refused). */
   canConfirm?: boolean
@@ -49,20 +52,21 @@ export function ConfirmDialog({
         // Click on the backdrop closes.
         if (e.target === ref.current && !busy) onClose()
       }}
-      className="m-auto w-[calc(100%-2rem)] max-w-md rounded-2xl border border-slate-200 bg-white p-0 text-slate-900 shadow-xl backdrop:bg-slate-950/50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+      className="m-auto w-[calc(100%-2rem)] max-w-md rounded-2xl border border-border-strong bg-surface p-0 text-text backdrop:bg-backdrop"
     >
       {open && (
         <div className="p-5">
           <h2 id={titleId} className="text-lg font-semibold">
             {title}
           </h2>
-          <div className="mt-2 space-y-3 text-sm text-slate-700 dark:text-slate-300">{children}</div>
+          <div className="mt-2 space-y-3 text-sm text-text">{children}</div>
           <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
             <Button onClick={onClose} disabled={busy} autoFocus>
               Cancel
             </Button>
             {canConfirm && (
               <Button variant="danger" onClick={onConfirm} disabled={busy}>
+                {confirmIcon}
                 {busy ? 'Working…' : confirmLabel}
               </Button>
             )}

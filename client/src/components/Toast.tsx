@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useMemo, useRef, useState, type ReactNode } from 'react'
-import { CheckCircle2, AlertCircle, X } from 'lucide-react'
+import { CheckCircle2, X, XCircle } from 'lucide-react'
+import { cx } from '../lib/cx'
 
 type ToastKind = 'success' | 'error'
 interface Toast {
@@ -48,12 +49,15 @@ export function ToastProvider({ children }: { children: ReactNode }) {
         {toasts.map((t) => (
           <div
             key={t.id}
-            className="pointer-events-auto flex w-full max-w-md items-start gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-lg dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+            className={cx(
+              'pointer-events-auto flex w-full max-w-md items-start gap-3 rounded-xl border bg-surface px-4 py-3 text-sm text-text',
+              t.kind === 'success' ? 'border-accent' : 'border-error',
+            )}
           >
             {t.kind === 'success' ? (
-              <CheckCircle2 className="mt-0.5 size-5 shrink-0 text-emerald-600 dark:text-emerald-400" aria-hidden />
+              <CheckCircle2 className="mt-0.5 size-5 shrink-0 text-accent" aria-hidden />
             ) : (
-              <AlertCircle className="mt-0.5 size-5 shrink-0 text-red-600 dark:text-red-400" aria-hidden />
+              <XCircle className="mt-0.5 size-5 shrink-0 text-error" aria-hidden />
             )}
             <p className="flex-1">
               <span className="sr-only">{t.kind === 'success' ? 'Success: ' : 'Error: '}</span>
@@ -62,7 +66,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
             <button
               type="button"
               onClick={() => dismiss(t.id)}
-              className="-m-1 rounded-md p-1 text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
+              className="-m-1 rounded-md p-1 text-text-muted hover:bg-hover hover:text-text"
               aria-label="Dismiss notification"
             >
               <X className="size-4" aria-hidden />

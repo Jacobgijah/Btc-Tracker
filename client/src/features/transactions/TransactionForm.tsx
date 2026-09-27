@@ -3,8 +3,8 @@ import { useNavigate } from 'react-router'
 import { Controller, useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { AlertCircle, Info, Loader2, Save, Wallet } from 'lucide-react'
-import { Button, LinkButton, SegmentedControl } from '../../components/ui'
+import { AlertTriangle, Info, Loader2, Save, Wallet } from 'lucide-react'
+import { Button, LinkButton, Notice, SegmentedControl } from '../../components/ui'
 import { TextAreaField, TextField } from '../../components/fields'
 import { useToast } from '../../components/Toast'
 import { ApiError, api, errorMessage } from '../../lib/api'
@@ -232,20 +232,20 @@ export function TransactionForm({ original }: { original?: Transaction }) {
     <form onSubmit={onSubmit} noValidate className="space-y-5">
       {/* Type */}
       <fieldset>
-        <legend className="mb-1.5 text-sm font-medium text-slate-700 dark:text-slate-300">Type</legend>
+        <legend className="mb-1.5 text-sm font-medium text-text">Type</legend>
         <div className="grid gap-2 sm:grid-cols-3">
           {TYPE_OPTIONS.map((o) => (
             <label key={o.value} className="relative block cursor-pointer">
               <input type="radio" value={o.value} className="peer sr-only" {...register('type')} />
               <span
                 className={cx(
-                  'block h-full rounded-xl border border-slate-300 bg-white p-3 transition-colors dark:border-slate-700 dark:bg-slate-900',
-                  'peer-checked:border-btc peer-checked:ring-1 peer-checked:ring-btc peer-checked:bg-btc/5',
-                  'peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-btc',
+                  'block h-full rounded-xl border border-border-strong bg-surface p-3 transition-colors hover:bg-hover',
+                  'peer-checked:border-accent peer-checked:ring-1 peer-checked:ring-accent',
+                  'peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-accent',
                 )}
               >
                 <span className="block text-sm font-semibold">{o.label}</span>
-                <span className="mt-0.5 block text-xs text-slate-600 dark:text-slate-400">{o.help}</span>
+                <span className="mt-0.5 block text-xs text-text-muted">{o.help}</span>
               </span>
             </label>
           ))}
@@ -300,13 +300,15 @@ export function TransactionForm({ original }: { original?: Transaction }) {
       {values.type === 'SELL' && (
         <div
           className={cx(
-            'flex flex-wrap items-center gap-x-3 gap-y-2 rounded-xl p-3 text-sm',
-            overHoldings
-              ? 'bg-amber-50 text-amber-950 dark:bg-amber-950/40 dark:text-amber-100'
-              : 'bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-200',
+            'flex flex-wrap items-center gap-x-3 gap-y-2 rounded-xl border bg-bg p-3 text-sm text-text',
+            overHoldings ? 'border-warning' : 'border-border',
           )}
         >
-          <Wallet className="size-4 shrink-0" aria-hidden />
+          {overHoldings ? (
+            <AlertTriangle className="size-4 shrink-0 text-warning" aria-hidden />
+          ) : (
+            <Wallet className="size-4 shrink-0 text-text-muted" aria-hidden />
+          )}
           <p className="flex-1">
             {availableSats === null ? (
               'Loading your holdings…'
@@ -377,15 +379,9 @@ export function TransactionForm({ original }: { original?: Transaction }) {
         {...register('usdTzsRate', { onChange: () => setManualDay(utcDayOf(getValues('date')) ?? 'none') })}
       />
       {rateInfo.kind === 'missing' && !errors.usdTzsRate && (
-        <p
-          role="alert"
-          className="-mt-3 flex items-start gap-2 rounded-lg bg-amber-50 p-2 text-sm text-amber-950 dark:bg-amber-950/40 dark:text-amber-100"
-        >
-          <AlertCircle className="mt-0.5 size-4 shrink-0" aria-hidden />
-          <span>
-            {rateInfo.message} Please enter the rate for {rateInfo.day} yourself (TZS per 1 USD).
-          </span>
-        </p>
+        <Notice tone="warning" role="alert" className="-mt-3">
+          {rateInfo.message} Please enter the rate for {rateInfo.day} yourself (TZS per 1 USD).
+        </Notice>
       )}
 
       <div className="grid gap-5 sm:grid-cols-2">
@@ -412,13 +408,9 @@ export function TransactionForm({ original }: { original?: Transaction }) {
 
       {overSellError && <OverSellMessage error={overSellError} currentId={original?.id} action="save" />}
       {formError && (
-        <p
-          role="alert"
-          className="flex items-start gap-2 rounded-xl bg-red-50 p-3 text-sm font-medium text-red-900 dark:bg-red-950/40 dark:text-red-100"
-        >
-          <AlertCircle className="mt-0.5 size-4 shrink-0" aria-hidden />
+        <Notice tone="error" role="alert" className="font-medium">
           {formError}
-        </p>
+        </Notice>
       )}
 
       <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">

@@ -47,7 +47,7 @@ export function SettingsPage() {
             <h2 id="cost-heading" className="font-semibold">
               Cost method
             </h2>
-            <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">How the cost of the bitcoin you sell is worked out.</p>
+            <p className="mt-1 text-sm text-text-muted">How the cost of the bitcoin you sell is worked out.</p>
             {settings.isPending ? (
               <Skeleton className="mt-4 h-40" />
             ) : (
@@ -69,7 +69,7 @@ export function SettingsPage() {
                 </div>
               </fieldset>
             )}
-            <p className="mt-3 rounded-xl bg-slate-100 p-3 text-sm text-slate-700 dark:bg-slate-800 dark:text-slate-300">
+            <p className="mt-3 rounded-xl border border-border bg-bg p-3 text-sm text-text">
               Your <strong>total</strong> profit/loss is the same either way. Only the split between realized
               (from sells) and unrealized (on what you still hold) changes.
             </p>
@@ -79,7 +79,7 @@ export function SettingsPage() {
             <h2 id="currency-heading" className="font-semibold">
               Display currency
             </h2>
-            <p className="mt-1 mb-3 text-sm text-slate-600 dark:text-slate-400">
+            <p className="mt-1 mb-3 text-sm text-text-muted">
               Used for values and P/L across the app. You can also switch it from the top bar.
             </p>
             {settings.isPending ? (
@@ -105,7 +105,7 @@ export function SettingsPage() {
         <h2 id="account-heading" className="font-semibold">
           Account
         </h2>
-        <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">Signed in as</p>
+        <p className="mt-2 text-sm text-text-muted">Signed in as</p>
         <div className="font-medium break-all">
           {me.isPending ? <Skeleton className="h-5 w-48" /> : me.isError ? errorMessage(me.error) : me.data.email}
         </div>
@@ -137,15 +137,15 @@ function RadioCard({
       <input type="radio" name={name} value={value} checked={checked} onChange={onChange} className="peer sr-only" />
       <span
         className={cx(
-          'flex items-start gap-3 rounded-xl border border-slate-300 p-3 transition-colors dark:border-slate-700',
-          'peer-checked:border-btc peer-checked:bg-btc/5 peer-checked:ring-1 peer-checked:ring-btc',
-          'peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-btc',
+          'flex items-start gap-3 rounded-xl border border-border-strong p-3 transition-colors hover:bg-hover',
+          'peer-checked:border-accent peer-checked:ring-1 peer-checked:ring-accent',
+          'peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-accent',
         )}
       >
         <span
           className={cx(
             'mt-0.5 grid size-5 shrink-0 place-items-center rounded-full border',
-            checked ? 'border-btc bg-btc text-slate-950' : 'border-slate-400 dark:border-slate-500',
+            checked ? 'border-accent bg-accent text-on-accent' : 'border-border-strong',
           )}
           aria-hidden
         >
@@ -153,7 +153,7 @@ function RadioCard({
         </span>
         <span>
           <span className="block text-sm font-semibold">{title}</span>
-          <span className="mt-0.5 block text-sm text-slate-600 dark:text-slate-400">{children}</span>
+          <span className="mt-0.5 block text-sm text-text-muted">{children}</span>
         </span>
       </span>
     </label>

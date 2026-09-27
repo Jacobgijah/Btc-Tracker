@@ -52,11 +52,11 @@ export function DashboardPage() {
 function EmptyState() {
   return (
     <Card className="flex flex-col items-center px-6 py-10 text-center">
-      <span className="grid size-14 place-items-center rounded-full bg-btc/15 text-btc-700 dark:text-btc">
+      <span className="grid size-14 place-items-center rounded-full border border-accent text-accent">
         <PiggyBank className="size-7" aria-hidden />
       </span>
       <h2 className="mt-4 text-lg font-semibold">Start tracking your savings</h2>
-      <p className="mt-1 max-w-sm text-sm text-slate-600 dark:text-slate-400">
+      <p className="mt-1 max-w-sm text-sm text-text-muted">
         Record a bitcoin purchase and you'll see its value and profit/loss here in TZS and USD.
       </p>
       <LinkButton to="/transactions/new" variant="primary" className="mt-6 w-full max-w-xs">
@@ -72,25 +72,28 @@ function Headline({ summary, currency }: { summary: PortfolioSummary; currency: 
   const noPrice = summary.price === null
   return (
     <Card aria-labelledby="value-heading">
-      <h2 id="value-heading" className="text-sm font-medium text-slate-600 dark:text-slate-400">
+      <h2 id="value-heading" className="text-sm font-medium text-text-muted">
         Current value
       </h2>
-      <p className="tabular mt-1 text-4xl font-bold tracking-tight text-slate-950 dark:text-white">
+      <p className="tabular mt-1 text-4xl font-bold tracking-tight text-text">
         {formatFiat(f.currentValue, currency)}
       </p>
-      <p className="tabular mt-1 text-sm text-slate-600 dark:text-slate-400">{formatBTC(summary.holdings.btc)}</p>
+      <p className="tabular mt-1 text-sm text-text-muted">{formatBTC(summary.holdings.btc)}</p>
 
       {noPrice ? (
-        <p className="mt-4 flex items-start gap-2 rounded-xl bg-slate-100 p-3 text-sm text-slate-700 dark:bg-slate-800 dark:text-slate-300">
-          <Info className="mt-0.5 size-4 shrink-0" aria-hidden />
+        <p className="mt-4 flex items-start gap-2 rounded-xl border border-border bg-bg p-3 text-sm text-text">
+          <Info className="mt-0.5 size-4 shrink-0 text-info" aria-hidden />
           There's no BTC price yet, so value and profit/loss can't be calculated. Refresh the price below.
         </p>
       ) : (
-        <div className="mt-4 border-t border-slate-100 pt-3 dark:border-slate-800">
-          <p className="text-xs font-medium text-slate-600 dark:text-slate-400">Unrealized profit/loss</p>
-          <p className="tabular mt-0.5 flex flex-wrap items-baseline gap-x-3 text-xl font-semibold">
-            <Pnl value={f.unrealizedPnl}>{formatFiat(f.unrealizedPnl, currency, { signed: true })}</Pnl>
-            <Pnl value={f.unrealizedPnlPct} className="text-base">
+        <div className="mt-4 border-t border-border pt-3">
+          <p className="text-xs font-medium text-text-muted">Unrealized profit/loss</p>
+          {/* 24px, so a loss may be blue text here (large text, 3.99:1 on the card). */}
+          <p className="tabular mt-0.5 flex flex-wrap items-baseline gap-x-3 text-2xl font-semibold">
+            <Pnl value={f.unrealizedPnl} size="lg">
+              {formatFiat(f.unrealizedPnl, currency, { signed: true })}
+            </Pnl>
+            <Pnl value={f.unrealizedPnlPct} icon={false} className="text-base">
               {f.unrealizedPnlPct === null ? DASH : `(${formatPct(f.unrealizedPnlPct)})`}
             </Pnl>
           </p>
@@ -102,10 +105,10 @@ function Headline({ summary, currency }: { summary: PortfolioSummary; currency: 
 
 function Stat({ label, value, sub }: { label: string; value: ReactNode; sub?: ReactNode }) {
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-      <dt className="text-xs font-medium text-slate-600 dark:text-slate-400">{label}</dt>
+    <div className="rounded-2xl border border-border bg-surface p-4">
+      <dt className="text-xs font-medium text-text-muted">{label}</dt>
       <dd className="tabular mt-1 text-base font-semibold break-words sm:text-lg">{value}</dd>
-      {sub && <dd className="tabular mt-0.5 text-xs text-slate-600 dark:text-slate-400">{sub}</dd>}
+      {sub && <dd className="tabular mt-0.5 text-xs text-text-muted">{sub}</dd>}
     </div>
   )
 }
@@ -144,12 +147,12 @@ function RecentTransactions() {
   return (
     <Card aria-labelledby="recent-heading">
       <div className="flex items-center justify-between">
-        <h2 id="recent-heading" className="text-sm font-medium text-slate-600 dark:text-slate-400">
+        <h2 id="recent-heading" className="text-sm font-medium text-text-muted">
           Recent transactions
         </h2>
         <Link
           to="/transactions"
-          className="-mr-2 inline-flex min-h-11 items-center gap-1 rounded-lg px-2 text-sm font-semibold text-btc-700 hover:underline dark:text-btc"
+          className="-mr-2 inline-flex min-h-11 items-center gap-1 rounded-lg px-2 text-sm font-semibold text-text underline decoration-info decoration-2 underline-offset-4 hover:decoration-accent"
         >
           View all <ArrowRight className="size-4" aria-hidden />
         </Link>
@@ -163,7 +166,7 @@ function RecentTransactions() {
       ) : recent.isError ? (
         <ErrorState className="mt-2" error={recent.error} onRetry={() => recent.refetch()} />
       ) : (
-        <ul className="mt-1 divide-y divide-slate-100 dark:divide-slate-800">
+        <ul className="mt-1 divide-y divide-border">
           {recent.data.data.map((t) => (
             <RecentRow key={t.id} t={t} />
           ))}
@@ -178,15 +181,15 @@ function RecentRow({ t }: { t: Transaction }) {
     <li>
       <Link
         to={`/transactions/${t.id}/edit`}
-        className="-mx-2 flex min-h-14 items-center justify-between gap-3 rounded-lg px-2 py-2 hover:bg-slate-50 dark:hover:bg-slate-800/60"
+        className="-mx-2 flex min-h-14 items-center justify-between gap-3 rounded-lg px-2 py-2 hover:bg-hover"
       >
         <div className="flex flex-col items-start gap-1">
           <TypeBadge type={t.type} />
-          <span className="text-xs text-slate-600 dark:text-slate-400">{formatDate(t.date)}</span>
+          <span className="text-xs text-text-muted">{formatDate(t.date)}</span>
         </div>
         <div className="tabular text-right">
           <p className="text-sm font-semibold">{formatBTC(t.btc)}</p>
-          <p className="text-xs text-slate-600 dark:text-slate-400">{formatFiat(t.fiatAmount, t.fiatCurrency)}</p>
+          <p className="text-xs text-text-muted">{formatFiat(t.fiatAmount, t.fiatCurrency)}</p>
         </div>
       </Link>
     </li>
@@ -196,7 +199,7 @@ function RecentRow({ t }: { t: Transaction }) {
 function DashboardSkeleton() {
   return (
     <div className="space-y-4" aria-busy="true" aria-label="Loading dashboard">
-      <div className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
+      <div className="rounded-2xl border border-border bg-surface p-5">
         <Skeleton className="h-4 w-28" />
         <Skeleton className="mt-3 h-10 w-56" />
         <Skeleton className="mt-2 h-4 w-32" />
@@ -204,13 +207,13 @@ function DashboardSkeleton() {
       </div>
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
         {Array.from({ length: 6 }, (_, i) => (
-          <div key={i} className="rounded-2xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
+          <div key={i} className="rounded-2xl border border-border bg-surface p-4">
             <Skeleton className="h-3 w-20" />
             <Skeleton className="mt-2 h-6 w-28" />
           </div>
         ))}
       </div>
-      <div className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
+      <div className="rounded-2xl border border-border bg-surface p-5">
         <Skeleton className="h-4 w-24" />
         <Skeleton className="mt-4 h-6 w-full" />
       </div>

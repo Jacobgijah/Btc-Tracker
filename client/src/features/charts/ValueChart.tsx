@@ -17,7 +17,7 @@ import {
   type ChartSize,
   type TipProps,
 } from './ChartParts'
-import { pickTicks, plot, spanDays, tickCountFor, useChartColors, type ChartColors } from './chartUtils'
+import { pickTicks, plot, spanDays, tickCountFor, CHART, type ChartColors } from './chartUtils'
 
 interface Row {
   date: string
@@ -45,7 +45,7 @@ export function ValueChart({ currency, size = 'full' }: { currency: Currency; si
 }
 
 function ValuePlot({ history, size }: { history: PortfolioHistory; size: ChartSize }) {
-  const colors = useChartColors()
+  const colors = CHART
   const { currency } = history
   const data = useMemo<Row[]>(
     () => history.points.map((p) => ({ date: p.date, value: plot(p.currentValue), cost: plot(p.costBasis), point: p })),
@@ -59,7 +59,7 @@ function ValuePlot({ history, size }: { history: PortfolioHistory; size: ChartSi
       <ChartLegend
         items={[
           { label: 'Value', color: colors.value, shape: 'area' },
-          { label: 'Cost basis', color: colors.cost, shape: 'step' },
+          { label: 'Cost basis', color: colors.cost, shape: 'step-dashed' },
         ]}
       />
       <ChartFrame
@@ -68,14 +68,14 @@ function ValuePlot({ history, size }: { history: PortfolioHistory; size: ChartSi
       >
         {(width, height) => (
           <ComposedChart width={width} height={height} data={data} margin={{ top: 8, right: 16, bottom: 0, left: 0 }}>
-            <CartesianGrid vertical={false} stroke={colors.grid} />
+            <CartesianGrid vertical={false} stroke={colors.grid} strokeOpacity={colors.gridOpacity} />
             <XAxis
               dataKey="date"
               ticks={pickTicks(dates, tickCountFor(width))}
               interval={0}
               tick={<EdgeAnchoredTick fill={colors.axis} format={(d) => formatAxisDay(d, span)} />}
               tickLine={false}
-              axisLine={{ stroke: colors.grid }}
+              axisLine={{ stroke: colors.grid, strokeOpacity: 0.5 }}
             />
             <YAxis
               width={72}
@@ -107,6 +107,7 @@ function ValuePlot({ history, size }: { history: PortfolioHistory; size: ChartSi
               dataKey="cost"
               stroke={colors.cost}
               strokeWidth={2}
+              strokeDasharray="6 4"
               dot={false}
               activeDot={{ r: 4, stroke: colors.surface, strokeWidth: 2 }}
               isAnimationActive={false}

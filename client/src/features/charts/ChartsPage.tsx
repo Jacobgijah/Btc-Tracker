@@ -32,12 +32,12 @@ export function DashboardCharts({ summary, currency }: { summary: PortfolioSumma
   return (
     <section aria-labelledby="charts-heading" className="space-y-4">
       <div className="flex items-center justify-between">
-        <h2 id="charts-heading" className="text-lg font-semibold text-slate-950 dark:text-white">
+        <h2 id="charts-heading" className="text-lg font-semibold text-text">
           Charts
         </h2>
         <Link
           to="/charts"
-          className="-mr-2 inline-flex min-h-11 items-center gap-1 rounded-lg px-2 text-sm font-semibold text-btc-700 hover:underline dark:text-btc"
+          className="-mr-2 inline-flex min-h-11 items-center gap-1 rounded-lg px-2 text-sm font-semibold text-text underline decoration-info decoration-2 underline-offset-4 hover:decoration-accent"
         >
           All charts <ArrowRight className="size-4" aria-hidden />
         </Link>

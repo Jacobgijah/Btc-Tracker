@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Link, useSearchParams } from 'react-router'
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { ChevronLeft, ChevronRight, Pencil, Plus, Trash2, X } from 'lucide-react'
-import { Button, Card, ErrorState, LinkButton, PageHeader, Skeleton, TypeBadge } from '../../components/ui'
+import { Button, Card, ErrorState, LinkButton, Notice, PageHeader, Skeleton, TypeBadge } from '../../components/ui'
 import { SelectField, TextField } from '../../components/fields'
 import { ConfirmDialog } from '../../components/ConfirmDialog'
 import { useToast } from '../../components/Toast'
@@ -105,7 +105,7 @@ export function TransactionsPage() {
             </Button>
           )}
         </form>
-        <p className="mt-2 text-xs text-slate-600 dark:text-slate-400">Dates are in UTC, matching the server.</p>
+        <p className="mt-2 text-xs text-text-muted">Dates are in UTC, matching the server.</p>
       </Card>
 
       {rangeInvalid ? null : list.isPending ? (
@@ -165,10 +165,10 @@ interface RowsProps {
 
 function TransactionTable({ rows, currency, onDelete }: RowsProps) {
   return (
-    <div className="hidden overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm md:block dark:border-slate-800 dark:bg-slate-900">
+    <div className="hidden overflow-x-auto rounded-2xl border border-border bg-surface md:block">
       <table className="tabular w-full text-sm">
         <caption className="sr-only">Transactions, newest first</caption>
-        <thead className="border-b border-slate-200 text-left text-xs font-medium text-slate-600 dark:border-slate-800 dark:text-slate-400">
+        <thead className="border-b border-border text-left text-xs font-medium text-text-muted">
           <tr>
             <th scope="col" className="px-4 py-3">Date</th>
             <th scope="col" className="px-4 py-3">Type</th>
@@ -180,21 +180,21 @@ function TransactionTable({ rows, currency, onDelete }: RowsProps) {
             <th scope="col" className="px-4 py-3 text-right"><span className="sr-only">Actions</span></th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+        <tbody className="divide-y divide-border">
           {rows.map((t) => {
             const price = priceLines(t, currency)
             return (
-              <tr key={t.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40">
+              <tr key={t.id} className="hover:bg-hover">
                 <td className="px-4 py-3 whitespace-nowrap">{formatDateTime(t.date)}</td>
                 <td className="px-4 py-3"><TypeBadge type={t.type} /></td>
                 <td className="px-4 py-3 text-right whitespace-nowrap font-medium">{formatBTC(t.btc)}</td>
                 <td className="px-4 py-3 text-right whitespace-nowrap">{formatFiat(t.fiatAmount, t.fiatCurrency)}</td>
-                <td className="px-4 py-3 text-right whitespace-nowrap text-slate-600 dark:text-slate-400">
+                <td className="px-4 py-3 text-right whitespace-nowrap text-text-muted">
                   {formatFiat(t.feeAmount, t.fiatCurrency)}
                 </td>
                 <td className="px-4 py-3 text-right whitespace-nowrap">
                   {price.main}
-                  {price.alt && <div className="text-xs text-slate-500 dark:text-slate-400">{price.alt}</div>}
+                  {price.alt && <div className="text-xs text-text-muted">{price.alt}</div>}
                 </td>
                 <td className="max-w-40 truncate px-4 py-3" title={t.exchange ?? undefined}>{t.exchange ?? DASH}</td>
                 <td className="px-2 py-1 text-right whitespace-nowrap">
@@ -215,37 +215,37 @@ function TransactionCards({ rows, currency, onDelete }: RowsProps) {
       {rows.map((t) => {
         const price = priceLines(t, currency)
         return (
-          <li key={t.id} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+          <li key={t.id} className="rounded-2xl border border-border bg-surface p-4">
             <div className="flex items-start justify-between gap-2">
               <div className="flex flex-col items-start gap-1">
                 <TypeBadge type={t.type} />
-                <span className="text-xs text-slate-600 dark:text-slate-400">{formatDateTime(t.date)}</span>
+                <span className="text-xs text-text-muted">{formatDateTime(t.date)}</span>
               </div>
               <RowActions t={t} onDelete={onDelete} />
             </div>
             <dl className="tabular mt-3 grid grid-cols-2 gap-x-3 gap-y-2 text-sm">
               <div>
-                <dt className="text-xs text-slate-600 dark:text-slate-400">BTC</dt>
+                <dt className="text-xs text-text-muted">BTC</dt>
                 <dd className="font-semibold">{formatBTC(t.btc)}</dd>
               </div>
               <div>
-                <dt className="text-xs text-slate-600 dark:text-slate-400">Amount</dt>
+                <dt className="text-xs text-text-muted">Amount</dt>
                 <dd className="font-semibold">{formatFiat(t.fiatAmount, t.fiatCurrency)}</dd>
               </div>
               <div>
-                <dt className="text-xs text-slate-600 dark:text-slate-400">Price / BTC</dt>
+                <dt className="text-xs text-text-muted">Price / BTC</dt>
                 <dd>
                   {price.main}
-                  {price.alt && <span className="block text-xs text-slate-500 dark:text-slate-400">{price.alt}</span>}
+                  {price.alt && <span className="block text-xs text-text-muted">{price.alt}</span>}
                 </dd>
               </div>
               <div>
-                <dt className="text-xs text-slate-600 dark:text-slate-400">Fee</dt>
+                <dt className="text-xs text-text-muted">Fee</dt>
                 <dd>{formatFiat(t.feeAmount, t.fiatCurrency)}</dd>
               </div>
               {t.exchange && (
                 <div className="col-span-2">
-                  <dt className="text-xs text-slate-600 dark:text-slate-400">Exchange</dt>
+                  <dt className="text-xs text-text-muted">Exchange</dt>
                   <dd className="break-words">{t.exchange}</dd>
                 </div>
               )}
@@ -263,7 +263,7 @@ function RowActions({ t, onDelete }: { t: Transaction; onDelete: (t: Transaction
     <div className="flex items-center gap-1">
       <Link
         to={`/transactions/${t.id}/edit`}
-        className="grid size-11 place-items-center rounded-xl text-slate-600 hover:bg-slate-100 hover:text-slate-950 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white"
+        className="grid size-11 place-items-center rounded-xl text-text-muted hover:bg-hover hover:text-text"
         aria-label={`Edit ${what}`}
         title="Edit"
       >
@@ -272,7 +272,7 @@ function RowActions({ t, onDelete }: { t: Transaction; onDelete: (t: Transaction
       <button
         type="button"
         onClick={() => onDelete(t)}
-        className="grid size-11 place-items-center rounded-xl text-slate-600 hover:bg-red-50 hover:text-red-700 dark:text-slate-300 dark:hover:bg-red-950/50 dark:hover:text-red-400"
+        className="grid size-11 place-items-center rounded-xl text-text-muted hover:bg-hover hover:text-error"
         aria-label={`Delete ${what}`}
         title="Delete"
       >
@@ -298,7 +298,7 @@ function Pagination({
   const last = Math.min(total, page * pageSize)
   return (
     <nav aria-label="Pagination" className="mt-4 flex items-center justify-between gap-3">
-      <p className="text-sm text-slate-600 dark:text-slate-400">
+      <p className="text-sm text-text-muted">
         {first}–{last} of {total}
       </p>
       <div className="flex gap-2">
@@ -306,7 +306,7 @@ function Pagination({
           <ChevronLeft className="size-4" aria-hidden />
           <span className="hidden sm:inline">Previous</span>
         </Button>
-        <span className="flex items-center px-1 text-sm text-slate-600 dark:text-slate-400" aria-current="page">
+        <span className="flex items-center px-1 text-sm text-text-muted" aria-current="page">
           {page} / {pages}
         </span>
         <Button onClick={() => onPage(page + 1)} disabled={page >= pages} aria-label="Next page">
@@ -342,6 +342,7 @@ function DeleteDialog({ transaction, onClose }: { transaction: Transaction | nul
       open={transaction !== null}
       title="Delete this transaction?"
       confirmLabel="Delete"
+      confirmIcon={<Trash2 className="size-4 text-error" aria-hidden />}
       busy={del.isPending}
       canConfirm={!overSell}
       onConfirm={() => transaction && del.mutate(transaction.id)}
@@ -358,11 +359,11 @@ function DeleteDialog({ transaction, onClose }: { transaction: Transaction | nul
         <OverSellMessage error={overSell} currentId={transaction?.id} action="delete" />
       ) : (
         del.error && (
-          <p role="alert" className="font-medium text-red-700 dark:text-red-400">
+          <Notice tone="error" role="alert">
             {del.error instanceof ApiError && del.error.status === 404
               ? 'This transaction no longer exists.'
               : errorMessage(del.error)}
-          </p>
+          </Notice>
         )
       )}
     </ConfirmDialog>

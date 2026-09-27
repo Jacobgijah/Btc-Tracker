@@ -4,5 +4,6 @@ import { afterEach } from 'vitest'
 
 afterEach(() => {
   cleanup()
-  localStorage.clear()
+  // Absent in files that opt into the node environment (e.g. src/theme tests).
+  globalThis.localStorage?.clear()
 })

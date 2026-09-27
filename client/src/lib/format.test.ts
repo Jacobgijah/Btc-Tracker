@@ -131,6 +131,9 @@ describe('plTone', () => {
     expect(plTone('0.00')).toBe('neutral')
     expect(plTone(null)).toBe('neutral')
     expect(plTone(undefined)).toBe('neutral')
+    // Rounds like the displayed value: "$0.00" has no sign, so it isn't a loss either
+    expect(plTone('-0.001')).toBe('neutral')
+    expect(plTone('-0.4', 0)).toBe('neutral')
   })
 })
 

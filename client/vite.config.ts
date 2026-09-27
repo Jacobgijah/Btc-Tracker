@@ -20,5 +20,7 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: ['./src/test/setup.ts'],
     restoreMocks: true,
+    // Process (rather than stub) the token file, so tokens.test.ts can read it with ?raw.
+    css: { include: [/theme\/tokens\.css/] },
   },
 })
