@@ -4,12 +4,18 @@ import rateLimit from 'express-rate-limit';
 import { z } from 'zod';
 import { prisma } from '../lib/prisma.js';
 import { signToken, requireAuth } from '../middleware/auth.js';
+import { HttpError } from '../lib/errors.js';
 
 const router = Router();
 
 const loginSchema = z.object({
   email: z.string().trim().toLowerCase().email().max(254),
   password: z.string().min(1).max(200),
+});
+
+const changePasswordSchema = z.object({
+  currentPassword: z.string().min(1).max(200),
+  newPassword: z.string().min(12).max(200),
 });
 
 // Compared against when the email doesn't exist, so response timing is the
@@ -32,15 +38,32 @@ router.post('/login', loginLimiter, async (req, res) => {
   const user = await prisma.user.findUnique({ where: { email } });
   const valid = await bcrypt.compare(password, user?.passwordHash ?? DUMMY_HASH);
 
-  if (!user || !valid) {
+  if (!user || !valid || !user.isActive) {
     return res.status(401).json({ error: INVALID_CREDENTIALS });
   }
 
-  res.json({ token: signToken(user), user: { id: user.id, email: user.email } });
+  res.json({
+    token: signToken(user),
+    user: { id: user.id, email: user.email, role: user.role, isActive: user.isActive },
+  });
 });
 
 router.get('/me', requireAuth, (req, res) => {
   res.json(req.user);
+});
+
+router.patch('/password', requireAuth, async (req, res) => {
+  const { currentPassword, newPassword } = changePasswordSchema.parse(req.body);
+
+  const user = await prisma.user.findUniqueOrThrow({ where: { id: req.user.id } });
+  const valid = await bcrypt.compare(currentPassword, user.passwordHash);
+  if (!valid) {
+    throw new HttpError(401, 'Current password is incorrect');
+  }
+
+  const passwordHash = await bcrypt.hash(newPassword, 12);
+  await prisma.user.update({ where: { id: user.id }, data: { passwordHash } });
+  res.status(204).end();
 });
 
 export default router;

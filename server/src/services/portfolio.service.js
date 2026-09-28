@@ -18,11 +18,11 @@ const CHRONOLOGICAL = [{ date: 'asc' }, { id: 'asc' }];
 export const HISTORY_RANGES = { '1M': 1, '3M': 3, '6M': 6, '1Y': 12, ALL: null };
 export const MAX_HISTORY_POINTS = 400;
 
-async function loadInputs() {
+async function loadInputs(userId) {
   const [transactions, snapshot, settings] = await Promise.all([
-    prisma.transaction.findMany({ orderBy: CHRONOLOGICAL }),
+    prisma.transaction.findMany({ where: { userId }, orderBy: CHRONOLOGICAL }),
     findLatestSnapshot(),
-    getSettings(),
+    getSettings(userId),
   ]);
   const price = snapshot && {
     btcUsd: snapshot.btcUsd,
@@ -37,15 +37,15 @@ const today = () => dayKey(new Date(), config.APP_TIMEZONE);
 /** Keeps only one currency's block, merged into the row: { USD, TZS, ...rest } -> { ...rest, ...USD }. */
 const pickCurrency = ({ USD, TZS, ...rest }, currency) => ({ ...rest, ...(currency === 'USD' ? USD : TZS) });
 
-export async function getPortfolioSummary() {
-  const { settings, ...inputs } = await loadInputs();
+export async function getPortfolioSummary(userId) {
+  const { settings, ...inputs } = await loadInputs(userId);
   const summary = computePortfolio(inputs);
   if (summary.price) summary.price.stale = isStale(inputs.price.timestamp);
   return summary;
 }
 
-export async function getLedger() {
-  const { transactions, price, costMethod } = await loadInputs();
+export async function getLedger(userId) {
+  const { transactions, price, costMethod } = await loadInputs(userId);
   const dailyPrices = await prisma.dailyPrice.findMany({ orderBy: { date: 'asc' } });
   return computeLedger({
     transactions,
@@ -61,8 +61,8 @@ export async function getLedger() {
  * Daily value/cost/P&L series for `range`, in one currency (default: the display
  * currency), thinned to about MAX_HISTORY_POINTS.
  */
-export async function getHistory({ range, currency }) {
-  const { transactions, price, costMethod, settings } = await loadInputs();
+export async function getHistory(userId, { range, currency }) {
+  const { transactions, price, costMethod, settings } = await loadInputs(userId);
   const tz = config.APP_TIMEZONE;
   const to = today();
   currency ??= settings.displayCurrency;
@@ -121,10 +121,10 @@ export async function getHistory({ range, currency }) {
 }
 
 /** Per-month savings activity in one currency (default: the display currency). */
-export async function getMonthly({ currency }) {
+export async function getMonthly(userId, { currency }) {
   const [transactions, settings] = await Promise.all([
-    prisma.transaction.findMany({ orderBy: CHRONOLOGICAL }),
-    getSettings(),
+    prisma.transaction.findMany({ where: { userId }, orderBy: CHRONOLOGICAL }),
+    getSettings(userId),
   ]);
   currency ??= settings.displayCurrency;
   const { months, summary } = computeMonthly({

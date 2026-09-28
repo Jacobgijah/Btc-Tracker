@@ -296,7 +296,15 @@ describe('backfillDailyPrices', () => {
   it('starts at the first transaction day by default and stops at yesterday', async () => {
     // 22:30 UTC on the 16th is the 17th in Dar es Salaam.
     await api.prisma.transaction.create({
-      data: { type: 'BUY', date: new Date('2026-03-16T22:30:00Z'), sats: 1000n, fiatAmount: '10', fiatCurrency: 'USD', usdTzsRate: '2500' },
+      data: {
+        type: 'BUY',
+        date: new Date('2026-03-16T22:30:00Z'),
+        sats: 1000n,
+        fiatAmount: '10',
+        fiatCurrency: 'USD',
+        usdTzsRate: '2500',
+        userId: api.state.user.id,
+      },
     });
     market({ published: eachDay('2026-03-01', '2026-03-31') });
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});

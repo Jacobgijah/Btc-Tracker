@@ -20,6 +20,18 @@ const PROTECTED = [
   ['post', '/prices/refresh'],
   ['get', '/prices/history'],
   ['get', '/prices/fx?date=2026-01-10'],
+  ['patch', '/auth/password'],
+  ['get', '/admin/users'],
+  ['post', '/admin/users'],
+  ['patch', '/admin/users/1'],
+  ['post', '/admin/users/1/reset-password'],
+];
+
+const ADMIN_ONLY = [
+  ['get', '/admin/users'],
+  ['post', '/admin/users'],
+  ['patch', '/admin/users/1'],
+  ['post', '/admin/users/1/reset-password'],
 ];
 
 describe('auth guard', () => {
@@ -39,5 +51,16 @@ describe('auth guard', () => {
 
     const res = await api.anon().get('/settings').set('Authorization', `Bearer ${login.body.token}`);
     expect(res.status).toBe(200);
+  });
+
+  it.each(ADMIN_ONLY)('%s %s -> 403 for a non-admin user', async (method, url) => {
+    const res = await api[method](url);
+    expect(res.status).toBe(403);
+  });
+
+  it('a deactivated user is rejected even with a previously valid token', async () => {
+    await api.prisma.user.update({ where: { id: api.state.user.id }, data: { isActive: false } });
+    const res = await api.get('/settings');
+    expect(res.status).toBe(401);
   });
 });

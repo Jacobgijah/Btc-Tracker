@@ -1,11 +1,16 @@
-import type { ReactNode } from 'react'
-import { useQuery } from '@tanstack/react-query'
-import { Check, LogOut } from 'lucide-react'
-import { Card, ErrorState, PageHeader, SegmentedControl, Skeleton } from '../../components/ui'
+import { useState, type ReactNode } from 'react'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { useMutation } from '@tanstack/react-query'
+import { z } from 'zod'
+import { Check, KeyRound, LogOut } from 'lucide-react'
+import { Button, Card, ErrorState, Notice, PageHeader, SegmentedControl, Skeleton } from '../../components/ui'
+import { TextField } from '../../components/fields'
 import { useToast } from '../../components/Toast'
+import { useAuth } from '../auth/AuthContext'
 import { LogoutButton } from '../auth/LogoutButton'
 import { api, errorMessage } from '../../lib/api'
-import { queryKeys, useSettings, useUpdateSettings } from '../../lib/queries'
+import { useSettings, useUpdateSettings } from '../../lib/queries'
 import { cx } from '../../lib/cx'
 import type { CostMethod, Currency, Settings } from '../../lib/types'
 
@@ -24,7 +29,7 @@ const COST_METHODS: { value: CostMethod; title: string; body: string }[] = [
 
 export function SettingsPage() {
   const settings = useSettings()
-  const me = useQuery({ queryKey: queryKeys.me, queryFn: api.me, staleTime: Infinity })
+  const { user: me } = useAuth()
   const update = useUpdateSettings()
   const toast = useToast()
 
@@ -105,14 +110,84 @@ export function SettingsPage() {
           Account
         </h2>
         <p className="mt-2 text-sm text-text-muted">Signed in as</p>
-        <div className="font-medium break-all">
-          {me.isPending ? <Skeleton className="h-5 w-48" /> : me.isError ? errorMessage(me.error) : me.data.email}
-        </div>
+        <div className="font-medium break-all">{me ? me.email : <Skeleton className="h-5 w-48" />}</div>
         <LogoutButton variant="secondary" className="mt-4 w-full sm:w-auto">
           <LogOut className="size-4" aria-hidden /> Log out
         </LogoutButton>
       </Card>
+
+      <ChangePasswordCard />
     </div>
+  )
+}
+
+const changePasswordSchema = z
+  .object({
+    currentPassword: z.string().min(1, 'Enter your current password'),
+    newPassword: z.string().min(12, 'New password must be at least 12 characters'),
+  })
+  .strict()
+type ChangePasswordValues = z.infer<typeof changePasswordSchema>
+
+function ChangePasswordCard() {
+  const toast = useToast()
+  const [serverError, setServerError] = useState<string | null>(null)
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors, isSubmitting },
+  } = useForm<ChangePasswordValues>({
+    resolver: zodResolver(changePasswordSchema),
+    defaultValues: { currentPassword: '', newPassword: '' },
+  })
+  const change = useMutation({
+    mutationFn: ({ currentPassword, newPassword }: ChangePasswordValues) => api.changePassword(currentPassword, newPassword),
+  })
+
+  const onSubmit = handleSubmit(async (values) => {
+    setServerError(null)
+    try {
+      await change.mutateAsync(values)
+      toast.success('Password changed')
+      reset()
+    } catch (err) {
+      setServerError(errorMessage(err))
+    }
+  })
+
+  return (
+    <Card aria-labelledby="password-heading">
+      <h2 id="password-heading" className="font-semibold">
+        Change password
+      </h2>
+      <form onSubmit={onSubmit} noValidate className="mt-3 space-y-4">
+        {serverError && (
+          <Notice tone="error" role="alert">
+            {serverError}
+          </Notice>
+        )}
+        <TextField
+          label="Current password"
+          type="password"
+          autoComplete="current-password"
+          error={errors.currentPassword?.message}
+          {...register('currentPassword')}
+        />
+        <TextField
+          label="New password"
+          type="password"
+          autoComplete="new-password"
+          hint="At least 12 characters."
+          error={errors.newPassword?.message}
+          {...register('newPassword')}
+        />
+        <Button type="submit" variant="primary" disabled={isSubmitting}>
+          <KeyRound className="size-4" aria-hidden />
+          {isSubmitting ? 'Changing…' : 'Change password'}
+        </Button>
+      </form>
+    </Card>
   )
 }
 

@@ -23,19 +23,19 @@ const monthlyQuerySchema = z.object({
 });
 
 router.get('/summary', async (req, res) => {
-  res.json(await getPortfolioSummary());
+  res.json(await getPortfolioSummary(req.user.id));
 });
 
 router.get('/ledger', async (req, res) => {
-  res.json(await getLedger());
+  res.json(await getLedger(req.user.id));
 });
 
 router.get('/history', async (req, res) => {
-  res.json(await getHistory(historyQuerySchema.parse(req.query)));
+  res.json(await getHistory(req.user.id, historyQuerySchema.parse(req.query)));
 });
 
 router.get('/monthly', async (req, res) => {
-  res.json(await getMonthly(monthlyQuerySchema.parse(req.query)));
+  res.json(await getMonthly(req.user.id, monthlyQuerySchema.parse(req.query)));
 });
 
 export default router;

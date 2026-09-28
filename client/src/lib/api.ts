@@ -1,4 +1,6 @@
 import type {
+  AdminUser,
+  CreateUserInput,
   Currency,
   FxRate,
   HistoryRange,
@@ -13,6 +15,7 @@ import type {
   TransactionInput,
   TransactionList,
   TransactionType,
+  UpdateUserInput,
   User,
 } from './types'
 
@@ -178,4 +181,14 @@ export const api = {
   getSettings: () => request<Settings>('/settings'),
   updateSettings: (patch: Partial<Settings>) =>
     request<Settings>('/settings', { method: 'PATCH', body: patch }),
+
+  changePassword: (currentPassword: string, newPassword: string) =>
+    request<void>('/auth/password', { method: 'PATCH', body: { currentPassword, newPassword } }),
+
+  listUsers: () => request<AdminUser[]>('/admin/users'),
+  createUser: (input: CreateUserInput) => request<AdminUser>('/admin/users', { method: 'POST', body: input }),
+  updateUser: (id: number, patch: UpdateUserInput) =>
+    request<AdminUser>(`/admin/users/${id}`, { method: 'PATCH', body: patch }),
+  resetUserPassword: (id: number, password: string) =>
+    request<void>(`/admin/users/${id}/reset-password`, { method: 'POST', body: { password } }),
 }

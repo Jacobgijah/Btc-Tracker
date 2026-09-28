@@ -16,11 +16,11 @@ const patchSettingsSchema = z
   .refine((s) => Object.keys(s).length > 0, 'Provide at least one setting to update');
 
 router.get('/', async (req, res) => {
-  res.json(await getSettings());
+  res.json(await getSettings(req.user.id));
 });
 
 router.patch('/', async (req, res) => {
-  res.json(await updateSettings(patchSettingsSchema.parse(req.body)));
+  res.json(await updateSettings(req.user.id, patchSettingsSchema.parse(req.body)));
 });
 
 export default router;

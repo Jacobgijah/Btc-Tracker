@@ -1,11 +1,12 @@
 import { NavLink, Outlet } from 'react-router'
-import { Bitcoin, ChartLine, LayoutDashboard, List, LogOut, Plus, Settings } from 'lucide-react'
+import { Bitcoin, ChartLine, LayoutDashboard, List, LogOut, Plus, Settings, Users } from 'lucide-react'
+import { useAuth } from '../features/auth/AuthContext'
 import { LogoutButton } from '../features/auth/LogoutButton'
 import { CurrencyToggle } from './CurrencyToggle'
 import { LinkButton } from './ui'
 import { cx } from '../lib/cx'
 
-const NAV = [
+const BASE_NAV = [
   { to: '/', label: 'Dashboard', Icon: LayoutDashboard, end: true },
   { to: '/charts', label: 'Charts', Icon: ChartLine, end: true },
   { to: '/transactions', label: 'Transactions', Icon: List, end: true },
@@ -13,6 +14,8 @@ const NAV = [
 ]
 
 export function AppLayout() {
+  const { user } = useAuth()
+  const NAV = user?.role === 'ADMIN' ? [...BASE_NAV, { to: '/admin/users', label: 'Admin', Icon: Users, end: true }] : BASE_NAV
   return (
     <div className="min-h-dvh">
       <a
@@ -105,7 +108,7 @@ export function AppLayout() {
   )
 }
 
-function BottomNavItem({ to, label, Icon, end }: (typeof NAV)[number]) {
+function BottomNavItem({ to, label, Icon, end }: (typeof BASE_NAV)[number]) {
   return (
     <li>
       <NavLink

@@ -42,10 +42,28 @@ export function setupApi() {
   const authed = (method, url) =>
     request(app)[method](url).set('Authorization', `Bearer ${state.token}`);
 
+  /** Creates a second user and returns request helpers authenticated as them. */
+  const createUser = async ({ email, password = TEST_PASSWORD, role = 'USER', isActive = true } = {}) => {
+    const user = await prisma.user.create({
+      data: { email, passwordHash: await bcrypt.hash(password, 4), role, isActive },
+    });
+    const token = signToken(user);
+    const authedAsUser = (method, url) => request(app)[method](url).set('Authorization', `Bearer ${token}`);
+    return {
+      user,
+      token,
+      get: (url) => authedAsUser('get', url),
+      post: (url, body) => authedAsUser('post', url).send(body),
+      patch: (url, body) => authedAsUser('patch', url).send(body),
+      del: (url) => authedAsUser('delete', url),
+    };
+  };
+
   return {
     state,
     prisma,
     anon,
+    createUser,
     get: (url) => authed('get', url),
     post: (url, body) => authed('post', url).send(body),
     patch: (url, body) => authed('patch', url).send(body),

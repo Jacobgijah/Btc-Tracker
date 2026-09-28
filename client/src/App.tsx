@@ -3,11 +3,13 @@ import { Route, Routes } from 'react-router'
 import { AppLayout } from './components/AppLayout'
 import { LinkButton, Skeleton } from './components/ui'
 import { LoginPage } from './features/auth/LoginPage'
+import { RequireAdmin } from './features/auth/RequireAdmin'
 import { RequireAuth } from './features/auth/RequireAuth'
 import { DashboardPage } from './features/dashboard/DashboardPage'
 import { TransactionsPage } from './features/transactions/TransactionsPage'
 import { EditTransactionPage, NewTransactionPage } from './features/transactions/TransactionFormPage'
 import { SettingsPage } from './features/settings/SettingsPage'
+import { AdminUsersPage } from './features/admin/AdminUsersPage'
 
 // Recharts is big: the charts load as their own chunk.
 const ChartsPage = lazy(() => import('./features/charts/ChartsPage').then((m) => ({ default: m.ChartsPage })))
@@ -37,6 +39,14 @@ export function AppRoutes() {
         <Route path="transactions/new" element={<NewTransactionPage />} />
         <Route path="transactions/:id/edit" element={<EditTransactionPage />} />
         <Route path="settings" element={<SettingsPage />} />
+        <Route
+          path="admin/users"
+          element={
+            <RequireAdmin>
+              <AdminUsersPage />
+            </RequireAdmin>
+          }
+        />
         <Route path="*" element={<NotFound />} />
       </Route>
     </Routes>
