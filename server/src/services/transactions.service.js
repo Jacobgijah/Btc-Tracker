@@ -14,18 +14,19 @@ const LEDGER_LOCK_KEY = 872_341_001;
  * proposed change applied. Nothing is written if any sell would exceed the
  * holdings at its point in time (InsufficientHoldingsError -> 422).
  */
-function withLedgerCheck(propose, mutate) {
+function withLedgerCheck(userId, propose, mutate) {
   return prisma.$transaction(async (tx) => {
-    await tx.$executeRaw`SELECT pg_advisory_xact_lock(${LEDGER_LOCK_KEY})`;
-    const current = await tx.transaction.findMany();
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(${LEDGER_LOCK_KEY}::int, ${userId}::int)`;
+    const current = await tx.transaction.findMany({ where: { userId } });
     const proposed = await propose(tx, current);
     assertSufficientHoldings(proposed);
     return mutate(tx);
   });
 }
 
-export async function listTransactions({ type, from, to, page, pageSize }) {
+export async function listTransactions(userId, { type, from, to, page, pageSize }) {
   const where = {
+    userId,
     ...(type && { type }),
     ...((from || to) && { date: { ...(from && { gte: from }), ...(to && { lte: to }) } }),
   };
@@ -41,8 +42,8 @@ export async function listTransactions({ type, from, to, page, pageSize }) {
   return { data: rows.map(serializeTransaction), page, pageSize, total };
 }
 
-export async function getTransaction(id) {
-  return serializeTransaction(await prisma.transaction.findUniqueOrThrow({ where: { id } }));
+export async function getTransaction(userId, id) {
+  return serializeTransaction(await prisma.transaction.findFirstOrThrow({ where: { id, userId } }));
 }
 
 /**
@@ -65,21 +66,23 @@ async function resolveRate(data) {
   return { usdTzsRate: found.rate.toFixed(4), usdTzsRateSource: found.source };
 }
 
-export async function createTransaction(input) {
+export async function createTransaction(userId, input) {
   // Network lookups happen before the DB transaction (and its lock) starts.
   const { usdTzsRate, usdTzsRateSource } = await resolveRate(input);
-  const data = { ...input, usdTzsRate };
+  const data = { ...input, usdTzsRate, userId };
   const created = await withLedgerCheck(
+    userId,
     (tx, current) => [...current, { ...data, id: null }],
     (tx) => tx.transaction.create({ data }),
   );
   return { ...serializeTransaction(created), usdTzsRateSource };
 }
 
-export async function updateTransaction(id, patch) {
+export async function updateTransaction(userId, id, patch) {
   const updated = await withLedgerCheck(
+    userId,
     async (tx, current) => {
-      const existing = await tx.transaction.findUniqueOrThrow({ where: { id } });
+      const existing = await tx.transaction.findFirstOrThrow({ where: { id, userId } });
       // Re-check cross-field rules against the merged row, e.g. a patch that
       // only lowers fiatAmount below the stored fee of a SELL.
       mergedRecordSchema.parse({
@@ -95,10 +98,11 @@ export async function updateTransaction(id, patch) {
   return serializeTransaction(updated);
 }
 
-export async function deleteTransaction(id) {
+export async function deleteTransaction(userId, id) {
   await withLedgerCheck(
+    userId,
     async (tx, current) => {
-      await tx.transaction.findUniqueOrThrow({ where: { id } });
+      await tx.transaction.findFirstOrThrow({ where: { id, userId } });
       return current.filter((t) => t.id !== id);
     },
     (tx) => tx.transaction.delete({ where: { id } }),

@@ -2,6 +2,7 @@ import 'dotenv/config';
 import bcrypt from 'bcryptjs';
 import { PrismaClient } from '@prisma/client';
 import { DEFAULT_SETTINGS } from '../src/constants.js';
+import { ensureDefaultSettings } from '../src/services/settings.service.js';
 
 const prisma = new PrismaClient();
 
@@ -10,7 +11,7 @@ async function main() {
   const password = process.env.ADMIN_PASSWORD;
 
   if (!email || !password) {
-    throw new Error('ADMIN_EMAIL and ADMIN_PASSWORD must be set to seed the user.');
+    throw new Error('ADMIN_EMAIL and ADMIN_PASSWORD must be set to seed the bootstrap admin user.');
   }
   if (password.length < 12) {
     throw new Error('ADMIN_PASSWORD must be at least 12 characters.');
@@ -19,15 +20,12 @@ async function main() {
   const passwordHash = await bcrypt.hash(password, 12);
   const user = await prisma.user.upsert({
     where: { email },
-    update: { passwordHash },
-    create: { email, passwordHash },
+    update: { passwordHash, role: 'ADMIN' },
+    create: { email, passwordHash, role: 'ADMIN' },
   });
-  console.log(`User ready: ${user.email} (id ${user.id})`);
+  console.log(`Admin user ready: ${user.email} (id ${user.id})`);
 
-  for (const [key, value] of Object.entries(DEFAULT_SETTINGS)) {
-    // update: {} keeps any value already chosen.
-    await prisma.setting.upsert({ where: { key }, update: {}, create: { key, value } });
-  }
+  await ensureDefaultSettings(user.id, prisma);
   console.log(`Default settings ensured: ${Object.keys(DEFAULT_SETTINGS).join(', ')}`);
 }
 

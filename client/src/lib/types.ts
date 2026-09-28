@@ -7,14 +7,39 @@ export type TransactionType = 'BUY' | 'SELL' | 'TRANSFER_IN'
 export const CURRENCIES: Currency[] = ['TZS', 'USD']
 export const TRANSACTION_TYPES: TransactionType[] = ['BUY', 'SELL', 'TRANSFER_IN']
 
+export type UserRole = 'ADMIN' | 'USER'
+
 export interface User {
   id: number
   email: string
+  role: UserRole
+  isActive: boolean
 }
 
 export interface LoginResponse {
   token: string
   user: User
+}
+
+export interface AdminUser {
+  id: number
+  email: string
+  role: UserRole
+  isActive: boolean
+  createdAt: string
+}
+
+/** Body for POST /admin/users. */
+export interface CreateUserInput {
+  email: string
+  password: string
+  role?: UserRole
+}
+
+/** Body for PATCH /admin/users/:id. */
+export interface UpdateUserInput {
+  isActive?: boolean
+  role?: UserRole
 }
 
 export interface Settings {

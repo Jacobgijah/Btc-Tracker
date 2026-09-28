@@ -4,6 +4,7 @@ import type { Currency, HistoryRange, Settings } from './types'
 
 export const queryKeys = {
   me: ['me'] as const,
+  users: ['users'] as const,
   settings: ['settings'] as const,
   portfolio: ['portfolio'] as const,
   // Under "portfolio" so every ledger or settings change refreshes the charts too.
@@ -73,4 +74,31 @@ export function invalidateLedger(queryClient: ReturnType<typeof useQueryClient>)
     queryClient.invalidateQueries({ queryKey: queryKeys.transactions }),
     queryClient.invalidateQueries({ queryKey: queryKeys.portfolio }),
   ])
+}
+
+export function useUsers() {
+  return useQuery({ queryKey: queryKeys.users, queryFn: api.listUsers })
+}
+
+export function useCreateUser() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: api.createUser,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.users }),
+  })
+}
+
+export function useUpdateUser() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, patch }: { id: number; patch: Parameters<typeof api.updateUser>[1] }) =>
+      api.updateUser(id, patch),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.users }),
+  })
+}
+
+export function useResetUserPassword() {
+  return useMutation({
+    mutationFn: ({ id, password }: { id: number; password: string }) => api.resetUserPassword(id, password),
+  })
 }

@@ -23,7 +23,8 @@ npm run build        # type-check + production build into dist/
 | `/charts` | Every chart full size: FX split card (TZS only), value vs cost basis, BTC price vs average cost with buy ▲ / sell ▼ markers, holdings over time (BTC or sats), monthly savings. Each has its own 1M/3M/6M/1Y/ALL range. The dashboard shows the FX card and the first two charts in compact form. |
 | `/transactions` | Type / date filters and pagination (in the URL). Table on desktop, cards on mobile. Edit and delete (with confirmation; a refused delete explains which later sell it would break). |
 | `/transactions/new`, `/transactions/:id/edit` | Form with live preview. USD/TZS rate is pre-filled from `GET /prices/fx` for the chosen date and stays editable. Sells show current holdings. |
-| `/settings` | Cost method (AVERAGE / FIFO), display currency, signed-in email, log out. |
+| `/settings` | Cost method (AVERAGE / FIFO), display currency, signed-in email, log out, change password. |
+| `/admin/users` | **Admins only** (redirects everyone else to `/`). Create accounts, deactivate/reactivate, reset a user's password. |
 
 The TZS | USD toggle in the top bar saves `displayCurrency` to the server and applies everywhere.
 
@@ -32,6 +33,9 @@ The TZS | USD toggle in the top bar saves `displayCurrency` to the server and ap
 - `src/lib/api.ts` — the only place that calls `fetch`. Adds the Bearer token (kept in `localStorage`),
   turns error bodies into `ApiError` (carrying the server's `error`, `fieldErrors` and `details`), and on
   any 401 clears the token; `RequireAuth` then redirects to `/login?next=<page>` and login returns there.
+- `src/features/auth/AuthContext.tsx` also holds the signed-in `User` (with `role`), fetching `/auth/me`
+  after a page reload if it isn't already known from `login()`. `RequireAdmin` (mirrors `RequireAuth`)
+  guards `/admin/users` and redirects non-admins to `/`; `AppLayout` only shows the Admin nav link to admins.
 - `src/lib/format.ts` — every number shown on screen goes through here (`TSh 1,234,567`, `$1,234.56`,
   `0.01200000 BTC`, `1,200,000 sats`, `+8.64%` / `−2.10%`, `—` for null). Rounding uses decimal.js.
 - `src/lib/money.ts` / `calc.ts` — decimal.js and BigInt helpers. **Money and BTC are never JS floats**;

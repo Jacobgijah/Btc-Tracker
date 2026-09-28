@@ -1,6 +1,7 @@
 # BTC Tracker
 
-Personal Bitcoin savings tracker. Single user, buys in TZS and USD, P/L shown in both.
+Bitcoin savings tracker. An admin creates accounts for other users; each user's transactions,
+settings and P/L (shown in both TZS and USD) are their own and isolated from everyone else's.
 
 - `server/` — Node.js + Express 5 + Prisma + PostgreSQL API
 - `client/` — React + TypeScript web app (Vite, TanStack Query, Tailwind). See [client/README.md](client/README.md).
@@ -13,7 +14,7 @@ npm run install:all                  # root (concurrently), server and client de
 cd server
 cp .env.example .env                 # fill in JWT_SECRET, ADMIN_EMAIL, ADMIN_PASSWORD
 npx prisma migrate dev               # create tables
-npm run db:seed                      # create your user + default settings
+npm run db:seed                      # create the bootstrap admin user + default settings
 cd ..
 npm run dev                          # server + client together
 ```
@@ -22,7 +23,9 @@ npm run dev                          # server + client together
 (Ctrl+C stops both):
 
 - API: http://localhost:4000 (also starts the price job)
-- App: http://localhost:5173 — sign in with `ADMIN_EMAIL` / `ADMIN_PASSWORD` from `server/.env`
+- App: http://localhost:5173 — sign in with `ADMIN_EMAIL` / `ADMIN_PASSWORD` from `server/.env`.
+  That account is an admin; from **Admin → Users** it can create accounts for other people, each
+  with their own transactions and settings.
 
 In development the Vite dev server proxies `/api/*` to `http://localhost:4000/*` (the `/api` prefix is
 stripped), so the browser only talks to one origin and CORS never comes into play. To run just one side,
@@ -226,13 +229,21 @@ GET /prices/fx?date=2026-01-10
 
 ## API
 
-All routes except `/health` and `/auth/login` need `Authorization: Bearer <token>`.
+All routes except `/health` and `/auth/login` need `Authorization: Bearer <token>`. Every user
+only ever sees their own transactions and settings; `/admin/*` routes additionally require the
+caller's `role` to be `ADMIN` (403 otherwise). `PriceSnapshot`/`DailyPrice` (market data) are
+shared by everyone.
 
 | Method | Path | Description |
 | --- | --- | --- |
 | GET | `/health` | `{ "status": "ok" }` |
-| POST | `/auth/login` | `{ email, password }` → `{ token, user }` (10 attempts / 15 min / IP) |
-| GET | `/auth/me` | Current user |
+| POST | `/auth/login` | `{ email, password }` → `{ token, user }` (10 attempts / 15 min / IP). Fails for a disabled account. |
+| GET | `/auth/me` | Current user: `{ id, email, role, isActive }` |
+| PATCH | `/auth/password` | `{ currentPassword, newPassword }` → 204. Change your own password. |
+| GET | `/admin/users` | **Admin only.** List every user: `{ id, email, role, isActive, createdAt }` |
+| POST | `/admin/users` | **Admin only.** `{ email, password, role? }` (`role` default `USER`) → the created user, 201. Seeds default settings for them. |
+| PATCH | `/admin/users/:id` | **Admin only.** `{ isActive?, role? }` → the updated user. Refuses to leave zero active admins. |
+| POST | `/admin/users/:id/reset-password` | **Admin only.** `{ password }` → 204 |
 | GET | `/transactions` | List. Query: `type`, `from`, `to`, `page` (1), `pageSize` (50, max 200). Newest first. |
 | GET | `/transactions/:id` | One transaction |
 | POST | `/transactions` | Create |
@@ -269,10 +280,13 @@ All routes except `/health` and `/auth/login` need `Authorization: Bearer <token
 | Status | When | Body |
 | --- | --- | --- |
 | 400 | Validation failed | `{ error, fieldErrors: { field: [msg] }, formErrors }` |
-| 401 | Missing / invalid token | `{ error }` |
+| 401 | Missing / invalid token; account disabled; wrong current password on `PATCH /auth/password` | `{ error }` |
+| 403 | `/admin/*` called by a non-admin user | `{ error }` |
 | 404 | Unknown id or route; no price snapshot yet; no FX rate for a date | `{ error }` |
+| 409 | `POST /admin/users` with an email that's already in use | `{ error, details: { field: "email" } }` |
 | 422 | The change would make a sell exceed holdings at its point in time | `{ error, details: { transactionId, date, attemptedSats, availableSats } }` |
 | 422 | `usdTzsRate` omitted and no rate could be found for the date | `{ error, details: { field: "usdTzsRate", date } }` |
+| 422 | `PATCH /admin/users/:id` would leave no active admin | `{ error }` |
 | 429 | Too many login attempts / price refreshes | `{ error }` |
 | 502 | `POST /prices/refresh`: every provider failed, or a value failed the sanity check | `{ error, details }` |
 
