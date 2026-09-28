@@ -6,6 +6,8 @@ settings and P/L (shown in both TZS and USD) are their own and isolated from eve
 - `server/` — Node.js + Express 5 + Prisma + PostgreSQL API
 - `client/` — React + TypeScript web app (Vite, TanStack Query, Tailwind). See [client/README.md](client/README.md).
 
+![BTC Tracker sign-in screen](docs/screenshot.png)
+
 ## Setup
 
 ```bash
