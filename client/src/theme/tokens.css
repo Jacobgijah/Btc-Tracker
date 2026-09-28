@@ -1,0 +1,48 @@
+/*
+ * Brand palette: the ONLY colour values in the app. Tailwind's default palette is
+ * removed, so e.g. bg-red-500 doesn't exist. src/theme/tokens.ts repeats the six hex
+ * values for SVG charts (tokens.test.ts keeps the two files identical).
+ *
+ * Components use the semantic aliases below, never the raw tokens
+ * (npm run lint:colors enforces this), so a change happens in one place.
+ */
+@theme {
+  --color-*: initial;
+
+  /* Brand tokens */
+  --color-black-space: #131313;
+  --color-black-space-soft: #1a1a1a;
+  --color-cool-gray: #7e8893;
+  --color-white: #e9e8e8; /* replaces pure white everywhere */
+  --color-gold: #d4af35;
+  --color-blue: #4a7abd;
+
+  /* Surfaces and text */
+  --color-bg: var(--color-black-space);
+  --color-surface: var(--color-black-space-soft);
+  --color-text: var(--color-white);
+  --color-text-muted: var(--color-cool-gray);
+
+  /* Lines */
+  --color-border: color-mix(in oklab, var(--color-cool-gray) 30%, transparent);
+  /* Controls (inputs, outline buttons) need 3:1 against the surface: full cool-gray (4.8:1). */
+  --color-border-strong: var(--color-cool-gray);
+
+  /* Accents. Blue fails AA for normal-size text (4.0-4.3:1): text-info / text-loss /
+     text-error only at >= 24px (or >= 18.66px bold); otherwise icons, borders, rings. */
+  --color-accent: var(--color-gold);
+  --color-on-accent: var(--color-black-space);
+  --color-info: var(--color-blue);
+  --color-gain: var(--color-gold);
+  --color-loss: var(--color-blue);
+  --color-warning: var(--color-gold);
+  --color-error: var(--color-blue);
+
+  /* States and overlays (opacity only for these, never for text) */
+  /* Hover stays faint so muted text on a hovered row still reaches 4.5:1. */
+  --color-hover: color-mix(in oklab, var(--color-cool-gray) 6%, transparent);
+  --color-pressed: color-mix(in oklab, var(--color-cool-gray) 12%, transparent);
+  --color-skeleton: color-mix(in oklab, var(--color-cool-gray) 16%, transparent);
+  --color-overlay: color-mix(in oklab, var(--color-black-space) 80%, transparent);
+  --color-backdrop: color-mix(in oklab, var(--color-black-space) 90%, transparent);
+}

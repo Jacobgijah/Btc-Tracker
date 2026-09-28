@@ -25,7 +25,7 @@ export function setupApi() {
 
   beforeEach(async () => {
     await prisma.$executeRawUnsafe(
-      'TRUNCATE "Transaction", "PriceSnapshot", "Setting", "User" RESTART IDENTITY CASCADE',
+      'TRUNCATE "Transaction", "PriceSnapshot", "DailyPrice", "Setting", "User" RESTART IDENTITY CASCADE',
     );
     // Low bcrypt cost keeps the suite fast; only this test user uses it.
     state.user = await prisma.user.create({

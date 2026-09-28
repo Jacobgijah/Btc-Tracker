@@ -43,6 +43,10 @@ export const EXPECTED_AVERAGE = {
     unrealizedPnl: '283520.00',
     unrealizedPnlPct: '8.64',
     totalPnl: '329950.00',
+    // USD unrealized 27.20 × 2700 = 73,440
+    btcEffect: '73440.00',
+    // USD cost basis 1,292.80 × 2700 − 3,280,480 = 3,490,560 − 3,280,480 = 210,080
+    fxEffect: '210080.00',
   },
   USD: {
     invested: '1616.00',
@@ -62,6 +66,9 @@ export const EXPECTED_FIFO = {
     costBasis: '3343100.00',
     unrealizedPnl: '220900.00',
     totalPnl: '329950.00',
+    // 7.00 × 2700 = 18,900 and 1,313 × 2700 − 3,343,100 = 202,000; sum 220,900
+    btcEffect: '18900.00',
+    fxEffect: '202000.00',
   },
   USD: {
     realizedPnl: '24.00',

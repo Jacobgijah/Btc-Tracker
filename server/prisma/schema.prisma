@@ -55,6 +55,20 @@ model PriceSnapshot {
   @@index([timestamp])
 }
 
+/// One closing price per calendar day (APP_TIMEZONE), for charts. PriceSnapshot keeps the intraday data.
+model DailyPrice {
+  id        Int      @id @default(autoincrement())
+  date      DateTime @unique @db.Date
+  btcUsd    Decimal  @db.Decimal(20, 2)
+  usdTzs    Decimal  @db.Decimal(14, 4)
+  /// "coinbase", "kraken" or "snapshot".
+  btcSource String
+  /// "currency-api", "snapshot" or "carried_forward" (no rate published that day).
+  fxSource  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
 model Setting {
   key   String @id
   value String

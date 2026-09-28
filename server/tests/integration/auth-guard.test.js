@@ -12,6 +12,8 @@ const PROTECTED = [
   ['delete', '/transactions/1'],
   ['get', '/portfolio/summary'],
   ['get', '/portfolio/ledger'],
+  ['get', '/portfolio/history'],
+  ['get', '/portfolio/monthly'],
   ['get', '/settings'],
   ['patch', '/settings'],
   ['get', '/prices/latest'],
